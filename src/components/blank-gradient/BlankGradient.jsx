@@ -7,7 +7,7 @@ import kamion from "../../assets/kamion.png";
 import FloatingIcons from "../floating-icons/FloatingIcons";
 
 function BlankGradient({
-  height = "300px",
+  height = "250px",
   variant = "primary",
   withIcons = false,
 }) {
