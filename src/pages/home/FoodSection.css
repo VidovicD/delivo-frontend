@@ -15,42 +15,102 @@
   100% { background-position: 0% 50%; }
 }
 
-/* ⬇⬇⬇ OVO JE SRCE ⬇⬇⬇ */
-.food-track {
-  display: flex;
-  gap: 40px;
-
-  padding: 40px;
-
-  overflow-x: auto;
-  overflow-y: hidden;
-
-  white-space: nowrap;
-
-  scroll-snap-type: x mandatory;
-
-  scrollbar-width: none;
+.food-bg {
+  position: absolute;
+  inset: -120px;
+  pointer-events: none;
 }
 
-.food-track::-webkit-scrollbar {
-  display: none;
+.food-viewport {
+  padding-top: 55px;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+
+  /* 🔥 FADE IVICE */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 12%,
+    black 88%,
+    transparent 100%
+  );
+}
+
+.food-track {
+  display: flex;
+  gap: 80px;
+  will-change: transform;
+  cursor: grab;
+}
+
+.food-track:active {
+  cursor: grabbing;
 }
 
 .food-card {
   flex: 0 0 auto;
-  width: 220px;
-  height: 160px;
-
+  width: 190px;
+  height: 140px;
   border-radius: 18px;
   overflow: hidden;
-
-  scroll-snap-align: start;
-
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  position: relative;
 }
 
 .food-card img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* SPOLJNI MASK – drži sve van ekrana */
+.food-bg-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .food-card {
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  .food-card:hover {
+    transform: scale(1.15);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  }
+}
+
+
+/* 🔒 zabrani selekciju teksta */
+.food-section,
+.food-track,
+.food-card,
+.food-card img {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+/* 🔒 zabrani drag slika */
+.food-card img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* 🔒 spreči default drag ponašanje */
+.food-track {
+  touch-action: pan-y; /* dozvoli samo vertikalni scroll */
 }

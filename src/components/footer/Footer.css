@@ -10,7 +10,7 @@ footer {
 .footer-top {
   background: linear-gradient(to right, #ffee9f, #fdf1b8);
   color: #000;
-  padding: 40px 0px;
+  padding: 20px 0px 40px 0px;
   padding-left: 50px;
   display: flex;
   justify-content: center;
