@@ -1,7 +1,6 @@
 .contact {
   width: 100%;
-
-  padding: 50px;
+  padding: clamp(25px, 6vw, 50px) 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -22,15 +21,15 @@
 }
 
 .contact__text {
-  font-size: 40px;
+  font-size: clamp(18px, 4vw, 30px);
   font-weight: 600;
   margin: 0;
 }
 
 .contact__phone {
-  font-size: 80px;
+  font-size: clamp(38px, 8vw, 80px);
   font-weight: 800;
-  margin: -20px 0;
+  margin: clamp(-8px, -3vw, -20px) 0;
   transition: transform 0.3s ease;
 }
 
@@ -40,12 +39,12 @@
 
 .contact__socials {
   display: flex;
-  gap: 20px;
-  margin-top: 15px;
+  gap: clamp(13px, 3vw, 20px);
+  margin-top: clamp(10px, 2vw, 15px);
 }
 
 .contact__socials img {
-  width: 45px;
+  width: clamp(30px, 6vw, 45px);
   transition: transform 0.3s ease;
 }
 
