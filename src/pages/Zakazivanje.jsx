@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './Zakazivanje.css';
-
 import hrana from '../assets/hrana.png';
 import paket from '../assets/paket.png';
 import kamion from '../assets/kamion.png';
