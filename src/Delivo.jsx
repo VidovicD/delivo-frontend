@@ -1,23 +1,14 @@
-import React, { useRef } from "react";
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
-
 import ScrollToTop from "./components/ScrollToTop";
 
-import HeroSection from "./pages/home/HeroSection";
-import ContactSection from "./pages/home/ContactSection";
-import AboutSection from "./pages/home/AboutSection";
-import ServicesSection from "./pages/home/ServicesSection";
-
-import PricingSection from "./pages/pricing/PricingSection";
-import DeliveryZones from "./pages/pricing/DeliveryZones";
+/* PAGES */
+import HomePage from "./pages/home/HomePage";
 import PricingPage from "./pages/pricing/PricingPage";
-
-import BlankGradient from "./components/blank-gradient/BlankGradient";
-
-import Usluge from "./pages/Usluge";
+import Services from "./pages/services/ServicesPage";
 import LegalPage from "./pages/legal/LegalPage";
 import ContactPage from "./pages/contact/ContactPage";
 import Blog from "./pages/Blog";
@@ -28,37 +19,15 @@ import Uslovi from "./pages/Uslovi";
 import Zakazivanje from "./pages/Zakazivanje";
 
 function Delivo() {
-  const zonesRef = useRef(null);
-
-  const scrollToZone = (zone) => {
-    zonesRef.current?.scrollToZone(zone);
-  };
-
   return (
     <Router>
       <ScrollToTop />
       <Header />
 
       <Routes>
-        <Route
-          path="/"
-          element={
-            <>
-              <HeroSection />
-              <ContactSection />
-              <AboutSection />
-              <ServicesSection />
-
-              <PricingSection scrollToZone={scrollToZone} />
-              <DeliveryZones ref={zonesRef} />
-
-              <BlankGradient withIcons />
-            </>
-          }
-        />
-
+        <Route path="/" element={<HomePage />} />
         <Route path="/cenovnik" element={<PricingPage />} />
-        <Route path="/usluge" element={<Usluge />} />
+        <Route path="/usluge" element={<Services />} />
         <Route path="/pravna" element={<LegalPage />} />
         <Route path="/kontakt" element={<ContactPage />} />
         <Route path="/blog" element={<Blog />} />
