@@ -17,6 +17,7 @@ import Zaposlenje from "./pages/Zaposlenje";
 import Politika from "./pages/Politika";
 import Uslovi from "./pages/Uslovi";
 import Zakazivanje from "./pages/Zakazivanje";
+import ComingSoon from "./pages/coming-soon/ComingSoon";
 
 function Delivo() {
   return (
@@ -26,10 +27,10 @@ function Delivo() {
 
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/cenovnik" element={<PricingPage />} />
+        <Route path="/cenovnik" element={<ComingSoon />} />
         <Route path="/usluge" element={<Services />} />
-        <Route path="/pravna" element={<LegalPage />} />
-        <Route path="/kontakt" element={<ContactPage />} />
+        <Route path="/pravna" element={<ComingSoon />} />
+        <Route path="/kontakt" element={<ComingSoon />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/zaposlenje" element={<Zaposlenje />} />

@@ -90,9 +90,9 @@
 /* PIN ICON */
 
 .hero__search-pin {
-  width: clamp(18px, 4.5vw, 25px);
-  height: clamp(18px, 4.5vw, 25px);
-  margin: 0 clamp(6px, 2vw, 10px);
+  width: clamp(18px, 4vw, 25px);
+  height: clamp(18px, 4vw, 25px);
+  margin: 0 clamp(6px, 1vw, 10px);
   opacity: 0.85;
 }
 
@@ -109,7 +109,7 @@
   background: transparent;
   outline: none;
 
-  font-size: clamp(14px, 3.5vw, 20px);
+  font-size: clamp(10px, 3.3vw, 20px);
   font-weight: 500;
 }
 

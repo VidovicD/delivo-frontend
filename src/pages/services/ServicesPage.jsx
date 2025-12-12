@@ -1,13 +1,11 @@
 import React from "react";
 
-import AboutSection from "../services/AboutSection";
-import ServicesSection from "../services/ServicesSection";
+import ComingSoon from "../coming-soon/ComingSoon";
 
 function ServicesPage() {
   return (
     <>
-      <AboutSection />
-      <ServicesSection />
+      <ComingSoon />
     </>
   );
 }

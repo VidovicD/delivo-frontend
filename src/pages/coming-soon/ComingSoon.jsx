@@ -7,7 +7,7 @@ import kamion from "../../assets/kamion.png";
 
 import FloatingIcons from "../../components/floating-icons/FloatingIcons";
 
-function ComingSoon({ title = "Coming Soon" }) {
+function ComingSoon({ title = "Stranica u izradi!" }) {
   return (
     <div className="coming-soon-page">
       <FloatingIcons
