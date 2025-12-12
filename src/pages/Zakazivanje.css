@@ -1,0 +1,192 @@
+.Zakazivanje {
+  max-width: 100%;
+  background: linear-gradient(120deg, #ffb60f, #ffd94d, #ffb60f);
+  background-size: 300% 300%;
+  animation: gradientShift 10s ease infinite;
+  position: relative;
+  overflow: visible;
+  padding-top: 160px;
+  padding-bottom: 100px;
+  box-sizing: border-box;
+  font-family: 'Open Sans', sans-serif;
+  cursor: default;
+}
+
+@media (max-width: 768px) {
+  .Zakazivanje {
+    padding: 30px 20px; /* više prostora gore/dole, sa strane 20px */
+  }
+}
+
+/* Samo za Kontakt stranicu */
+.Zakazivanje.fullPage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding-top: 100px;   /* gore */
+  padding-bottom: 40px; /* dole */
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+}
+
+/* Za male ekrane (telefon) */
+@media (max-width: 768px) {
+  .Zakazivanje.fullPage {
+    padding-top: 80px;    /* smanjen padding gore */
+    padding-bottom: 20px; /* smanjen padding dole */
+  }
+}
+
+.icon {
+  position: absolute;
+  animation-name: floatIcon;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes floatIcon {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+.contactFormWrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: linear-gradient(to right, #ffee9f, #fdf1b8);
+  padding: 25px 25px;
+  border-radius: 15px;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 2;
+}
+
+.contactFormMessage {
+  text-align: center;
+  padding: 53px 20px;
+}
+
+.contactForm h2 {
+  text-align: center;
+  margin-bottom: 0px;
+  font-size: clamp(15px, 4vw, 28px);
+  font-weight: 800;
+  color: #000000;
+}
+
+.contactForm h3 {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 40px;
+}
+
+.contactForm label {
+  display: block;
+  margin-top: 15px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.contactForm input,
+.contactForm textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 5px;
+  border: 1px solid #d3d3d38a;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #fffadbd0;
+  box-sizing: border-box;
+}
+
+.contactForm input::placeholder,
+.contactForm textarea::placeholder {
+  color: #a0a0a0;
+  font-style: italic;
+}
+
+.contactForm input:focus,
+.contactForm textarea:focus {
+  outline: none;
+  border: 1.5px solid #ffb70f;
+  box-shadow: 0 0 5px rgba(255, 183, 15, 0.5);
+  background: #fffde0;
+}
+
+.contactForm button {
+  margin: 20px auto 0 auto;
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #ffb70f98;
+  color: #000000;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.contactForm button:hover {
+  background: #ffd36e;
+  transform: scale(1.015);
+}
+
+.contactForm button:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.contactFormMessage h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #000000;
+}
+
+.contactFormMessage p {
+  font-size: 16px;
+  color: #000000;
+}
+
+input, textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 200px;
+}
+
+.addressRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.addressField {
+  flex: 1 1 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.error {
+  color: red;
+  font-size: 13px;
+  margin-top: 3px;
+  margin-bottom: 5px;
+}
+
+@media (max-width: 500px) {
+  .addressRow {
+    flex-direction: column;
+  }
+}

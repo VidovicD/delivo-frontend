@@ -1,0 +1,45 @@
+.about {
+  width: 100%;
+  padding: 100px 0;
+
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+
+  background: linear-gradient(120deg, #ffb60f, #ffd94d, #ffb60f);
+  background-size: 300% 300%;
+  animation: about-gradient 10s ease infinite;
+}
+
+@keyframes about-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.about__title {
+  font-size: 60px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  z-index: 10;
+}
+
+.about__text {
+  max-width: 900px;
+  padding: 0 50px;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  z-index: 10;
+  transition: transform 0.4s ease;
+}
+
+.about__text:hover {
+  transform: scale(1.015);
+}

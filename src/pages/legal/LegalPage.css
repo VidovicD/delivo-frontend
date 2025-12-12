@@ -1,0 +1,361 @@
+.legal-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 190px 20px 130px;
+  font-family: "Open Sans", sans-serif;
+  color: #142127;
+  background: linear-gradient(120deg, #ffb60f, #ffd94d, #ffb60f);
+  background-size: 300% 300%;
+  animation: gradientShift 10s ease infinite;
+  cursor: default;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.legal-page .floating-icons {
+  z-index: 1;
+}
+
+.legal-page .floating-icons__icon {
+  opacity: 0.06;
+  animation-name: floatUp;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.legal-box {
+  background: linear-gradient(to right, #ffee9f, #fdf1b8);
+  padding: 40px 50px;
+  border-radius: 25px;
+  max-width: 800px;
+  width: 95%;
+  text-align: left;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.12);
+  margin-bottom: 40px;
+  z-index: 10;
+  position: relative;
+}
+
+.legal-box--full {
+  width: 95%;
+}
+
+.legal-row {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+  max-width: 1200px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.legal-box--half {
+  width: 50%;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .legal-row {
+    flex-direction: column;
+  }
+  .legal-box--half {
+    width: 100%;
+  }
+}
+
+.legal-box h1,
+.legal-box h2 {
+  text-align: center;
+  font-weight: 800;
+  font-size: 30px;
+  color: #000;
+  margin-bottom: 20px;
+}
+
+.legal-intro {
+  font-size: 16px;
+  margin-bottom: 25px;
+}
+
+.legal-steps p {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.legal-list p,
+.legal-target p {
+  font-size: 16px;
+  margin: 6px 0;
+  font-weight: 600;
+}
+
+.legal-contact {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 2px solid rgba(0,0,0,0.15);
+}
+
+.legal-contact p {
+  margin: 6px 0;
+}
+
+.legal-btn {
+  background: linear-gradient(to right, #ffee9f, #fdf1b8);
+  background-color: #fceca3;
+  padding: 15px 35px;
+  font-size: 20px;
+  font-weight: 700;
+  z-index: 2;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.legal-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+}
+
+.legal-list p,
+.legal-target p,
+.legal-steps p,
+.legal-steps h3 {
+  transition: transform 0.25s ease;
+  cursor: default;
+}
+
+.legal-list p:hover,
+.legal-target p:hover,
+.legal-steps p:hover,
+.legal-steps h3:hover {
+  transform: scale(1.03);
+  z-index: 3;
+  position: relative;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1002;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-box {
+  background: linear-gradient(to right, #ffee9f, #fdf1b8);
+  padding: 20px 40px 60px;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 25px;
+  text-align: center;
+  animation: popIn 0.3s ease;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+  transition: 0.25s ease;
+  font-family: "Open Sans", sans-serif;
+  background-color: #fffadbd0;
+}
+
+.modal-inner {
+  transition: 0.2s ease;
+}
+
+.shake {
+  animation: shakeAnim 0.35s ease;
+}
+
+@keyframes shakeAnim {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-form input,
+.modal-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d3d3d38a;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #fffadbd0;
+  box-sizing: border-box;
+}
+
+.modal-form textarea {
+  min-height: 85px;
+  resize: vertical;
+}
+
+.modal-form input:focus,
+.modal-form textarea:focus {
+  outline: none;
+  border: 1.5px solid #ffb70f;
+  box-shadow: 0 0 5px rgba(255, 183, 15, 0.5);
+  background: #fffde0;
+}
+
+.modal-form input::placeholder,
+.modal-form textarea::placeholder {
+  color: #a0a0a0;
+  font-style: italic;
+}
+
+.error {
+  color: red;
+  font-size: 13px;
+  margin: 0px;
+}
+
+.modal-box .error {
+  text-align: left !important;
+}
+
+.modal-send-btn {
+  width: 100%;
+  padding: 13px 0;
+  background: #ffb70f98;
+  color: #000;
+  font-weight: 700;
+  font-size: 16.5px;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-send-btn:hover {
+  background: #ffd36e;
+  transform: scale(1.015);
+}
+
+.success-box {
+  background: #fdf1b8;
+  padding: 40px;
+  border-radius: 25px;
+  text-align: center;
+  animation: popIn 0.3s ease;
+  box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+  max-width: 420px;
+  width: 90%;
+}
+
+.success-check {
+  width: 70px;
+  margin: 0 auto 15px;
+}
+
+.success-check svg {
+  width: 70px;
+  height: 70px;
+  stroke: #0e181c;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.checkmark__path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawCheck 0.7s ease forwards;
+}
+
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
+
+.success-btn {
+  padding: 12px 25px;
+  background: #142127;
+  color: #fffadbd0;
+  border-radius: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+}
+
+.success-btn:hover {
+  transform: scale(1.1);
+}
+
+.user-type-toggle {
+  display: flex;
+  justify-content: center;
+  background: #fffadbd0;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto 18px auto;
+  gap: 6px;
+}
+
+.user-type-toggle button {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: #fffadbd0;
+  font-weight: 600;
+  font-size: 15px;
+  color: #000;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.user-type-toggle button.active {
+  background: #ffb70f98;
+  border: 1px solid #ffb70f;
+  color: #000;
+}
+
+.user-type-toggle button:hover {
+  background: #ffd36e;
+  transform: scale(1.015);
+}
+
+.user-type-toggle button:focus,
+.user-type-toggle button:active {
+  outline: none !important;
+  box-shadow: none !important;
+}

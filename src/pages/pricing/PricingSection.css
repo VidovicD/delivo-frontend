@@ -1,0 +1,111 @@
+.pricing {
+  width: 100%;
+  padding: 130px 50px;
+
+  position: relative;
+  overflow: hidden;
+
+  background: linear-gradient(120deg, #ffb60f, #ffd94d, #ffb60f);
+  background-size: 300% 300%;
+  animation: gradientShift 10s ease infinite;
+
+  font-family: "Open Sans", sans-serif;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.pricing-section {
+  max-width: 1000px;
+  margin: 0 auto;
+
+  background: linear-gradient(to right, #ffee9f, #fdf1b8);
+  padding: 30px 40px;
+
+  border-radius: 20px;
+  box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1);
+
+  position: relative;
+  z-index: 2;
+}
+
+/* NASLOV */
+.pricing-section__title {
+  font-size: 50px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* OPIS */
+.pricing-section__description {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* ZONE */
+.pricing-section__zones {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pricing-zone {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px 15px;
+  background: #fff3bbb6;
+
+  border-radius: 10px;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.pricing-zone:hover {
+  transform: scale(1.015);
+}
+
+/* NAPOMENA */
+.pricing-section__note {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.pricing-section__note p {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.pricing-section__note ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.pricing-section__note li {
+  margin-bottom: 6px;
+}
+
+/* DATUM */
+.pricing-section__date {
+  font-size: 14px;
+  text-align: right;
+  margin-top: 10px;
+}
