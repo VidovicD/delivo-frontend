@@ -7,10 +7,10 @@ import ScrollToTop from "./components/ScrollToTop";
 
 /* PAGES */
 import HomePage from "./pages/home/HomePage";
-import PricingPage from "./pages/pricing/PricingPage";
+/*import PricingPage from "./pages/pricing/PricingPage";*/
 import Services from "./pages/services/ServicesPage";
-import LegalPage from "./pages/legal/LegalPage";
-import ContactPage from "./pages/contact/ContactPage";
+/*import LegalPage from "./pages/legal/LegalPage";*/
+/*import ContactPage from "./pages/contact/ContactPage";*/
 import Blog from "./pages/Blog";
 import FAQ from "./pages/FAQ";
 import Zaposlenje from "./pages/Zaposlenje";
