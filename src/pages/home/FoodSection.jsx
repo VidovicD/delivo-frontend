@@ -26,34 +26,32 @@ function FoodSection() {
 
   const items = Array.from({ length: COPIES }, () => restaurants).flat();
 
-  useEffect(() => {
+    useEffect(() => {
+    const animate = () => {
+        const track = trackRef.current;
+        if (!track) return;
+
+        const width = track.scrollWidth / COPIES;
+
+        if (!isDragging.current) {
+        pos.current += AUTOPLAY_SPEED;
+        }
+
+        pos.current += dragVelocity.current;
+        dragVelocity.current *= FRICTION;
+
+        const visualX =
+        ((pos.current % width) + width) % width - width;
+
+        track.style.transform = `translateX(${visualX}px)`;
+
+        rafId.current = requestAnimationFrame(animate);
+    };
+
     animate();
+
     return () => cancelAnimationFrame(rafId.current);
-  }, []);
-
-  const animate = () => {
-    const track = trackRef.current;
-    if (!track) return;
-
-    const width = track.scrollWidth / COPIES;
-
-    /* AUTOPLAY – uvek isti, spor */
-    if (!isDragging.current) {
-    pos.current += AUTOPLAY_SPEED;
-    }
-    
-    /* INERTIA */
-    pos.current += dragVelocity.current;
-    dragVelocity.current *= FRICTION;
-
-    /* infinite wrap */
-    const visualX =
-      ((pos.current % width) + width) % width - width;
-
-    track.style.transform = `translateX(${visualX}px)`;
-
-    rafId.current = requestAnimationFrame(animate);
-  };
+    }, []);
 
   /* POINTER EVENTS */
 
