@@ -101,7 +101,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
   const name = registerName;
 
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState("weak");
 
   const [loading, setLoading] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
