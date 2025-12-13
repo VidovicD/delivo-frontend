@@ -1,13 +1,6 @@
 .contact {
   width: 100%;
-  padding: clamp(25px, 6vw, 50px) 0;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  text-align: center;
+  height: 100px;
 
   background: linear-gradient(to right, #ffee9f, #fdf1b8);
 
@@ -17,44 +10,4 @@
   box-shadow:
     0 -5px 40px rgba(0, 0, 0, 0.1),
     0 5px 40px rgba(0, 0, 0, 0.1);
-
-  cursor: default;
-}
-
-.contact__text {
-  font-size: clamp(18px, 4vw, 30px);
-  font-weight: 600;
-  margin: 0;
-}
-
-.contact__phone {
-  font-size: clamp(38px, 8vw, 80px);
-  font-weight: 800;
-  margin: clamp(-8px, -3vw, -20px) 0;
-  transition: transform 0.3s ease;
-}
-
-/* ✅ HOVER SAMO NA DESKTOPU */
-@media (hover: hover) {
-  .contact__phone:hover {
-    transform: scale(1.05);
-  }
-}
-
-.contact__socials {
-  display: flex;
-  gap: clamp(13px, 3vw, 20px);
-  margin-top: clamp(10px, 2vw, 15px);
-}
-
-.contact__socials img {
-  width: clamp(30px, 6vw, 45px);
-  transition: transform 0.3s ease;
-}
-
-/* ✅ HOVER SAMO NA DESKTOPU */
-@media (hover: hover) {
-  .contact__socials img:hover {
-    transform: scale(1.3);
-  }
 }

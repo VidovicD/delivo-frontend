@@ -1,7 +1,9 @@
-/* Glavni header kontejner */
-header {
+/* =========================
+   GLAVNI HEADER
+========================= */
+.header {
   width: 100%;
-  padding: 10px;
+  padding: 12px 32px;
   background: linear-gradient(to right, #ffee9f, #fdf1b8);
   color: black;
   display: flex;
@@ -9,180 +11,172 @@ header {
   justify-content: space-between;
   box-sizing: border-box;
   box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-  position: sticky;
-  top: 0;
-  z-index: 1001;
-}
 
-/* Logo */
-.logo {
-  width: 180px;
-  height: auto;
-  display: block;
-  margin-left: 15px;
-  transition: transform 0.3s ease;
-}
-
-.logo:hover {
-  transform: scale(1.1);
-}
-
-/* Desktop navigacija */
-.navigacija {
-  margin-right: 30px;
-}
-
-.navigacija ul {
-  list-style: none;
-  display: flex;
-  gap: 5px;
-  margin: 0;
-  padding: 0;
-}
-
-.navigacija li a {
-  color: black;
-  text-decoration: none;
-}
-
-.navigacija li {
-  cursor: pointer;
-  white-space: nowrap;
-  padding: 5px 10px;
-  border-radius: 4px;
-  transition: background 0.3s, transform 0.3s ease;
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 650;
-  font-size: 20px;
-}
-
-.navigacija li:hover {
-  transform: scale(1.1);
-}
-
-/* Hamburger dugme */
-.hamburger {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.hamburger:hover {
-  transform: scale(1.1);
-}
-
-.hamburger div {
-  width: 25px;
-  height: 3px;
-  background-color: black;
-}
-
-/* Overlay meni */
-.overlay-menu {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(20, 33, 39, 0.99);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  z-index: 4000;
-}
-
-.overlay-menu.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.overlay-menu ul {
-  flex-direction: column;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  text-align: center;
-}
-
-.overlay-menu li a {
-  display: inline-block;
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 600;
-  font-size: 30px;
-  cursor: pointer;
-  text-decoration: none;
-  color: white;
-  transition: transform 0.3s ease, color 0.3s ease;
-}
-
-.overlay-menu li a:hover {
-  transform: scale(1.1);
-  color: #ffee9f;
-}
-
-.overlay-menu .close-btn {
-  position: absolute;
-  top: 30px;
-  right: 30px;
-  font-size: 40px;
-  color: white;
-  cursor: pointer;
-  transition: transform 0.3s ease, color 0.3s ease;
-}
-
-.overlay-menu .close-btn:hover {
-  transform: scale(1.2);
-  color: #ffee9f;
-}
-
-/* Sakrij overlay na desktopu */
-@media screen and (min-width: 868px) {
-  .overlay-menu {
-    display: none !important;
-  }
-}
-
-/* Sakrij desktop navigaciju na mobilnim uređajima */
-@media screen and (max-width: 867px) {
-  .navigacija {
-    display: none;
-  }
-
-  .hamburger {
-    display: flex;
-    position: absolute;
-    right: 30px;
-    top: 20px;
-  }
-}
-
-/* Aktivna link */
-.active-link {
-  color: #ffee9f !important;
-  transform: scale(1.1);
-}
-
-/* Auto-hide header */
-.main-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: linear-gradient(to right, #ffee9f, #fdf1b8);
-  transition: transform 0.3s ease;
   z-index: 1001;
+
+  transition: transform 0.35s ease;
+  will-change: transform;
 }
 
-.main-header.visible {
+/* SHOW / HIDE */
+.header.visible {
   transform: translateY(0);
 }
 
-.main-header.hidden {
+.header.hidden {
   transform: translateY(-100%);
+}
+
+/* =========================
+   LOGO
+========================= */
+.header__left {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.header__logo {
+  width: 180px;
+  height: auto;
+  transition: transform 0.3s ease;
+}
+
+.header__logo:hover {
+  transform: scale(1.08);
+}
+
+/* =========================
+   DESNA STRANA
+========================= */
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* DESKTOP AUTH */
+.header__auth-desktop {
+  display: flex;
+  gap: 14px;
+}
+
+/* MOBILE AUTH ICON */
+.header__auth-mobile {
+  display: none;
+  cursor: pointer;
+}
+
+/* =========================
+   DUGMAD
+========================= */
+.header__btn {
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s ease;
+}
+
+/* PRIJAVA */
+.header__btn--login {
+  background: transparent;
+  color: black;
+}
+
+.header__btn--login:hover {
+  transform: scale(1.08);
+}
+
+/* REGISTRACIJA */
+.header__btn--register {
+  background-color: #142127;
+  color: #fdf1b8;
+}
+
+.header__btn--register:hover {
+  transform: scale(1.08);
+  opacity: 0.9;
+}
+
+/* USER IKONICA */
+.header__user-icon {
+  width: 30px;
+  height: auto;
+  transition: transform 0.25s ease;
+}
+
+.header__user-icon:hover {
+  transform: scale(1.1);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media screen and (max-width: 768px) {
+  .header {
+    padding: 10px 20px;
+  }
+
+  .header__logo {
+    width: 150px;
+  }
+
+  .header__auth-desktop {
+    display: none;
+  }
+
+  .header__auth-mobile {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .header__logo {
+    width: 135px;
+  }
+}
+
+/* =========================
+   ODJAVA (LOGOUT)
+========================= */
+.header__btn--logout {
+  background: transparent;
+  color: #142127;
+  border: 2px solid #142127;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* HOVER EFEKAT */
+.header__btn--logout:hover {
+  background: #142127;
+  color: #fdf1b8;
+  transform: scale(1.08);
+}
+
+/* AKTIVNO KLIKANJE */
+.header__btn--logout:active {
+  transform: scale(0.95);
+}
+
+/* ODJAVA – ISTI STIL KAO REGISTRACIJA */
+.header__btn--logout {
+  background-color: #142127;
+  color: #fdf1b8;
+}
+
+.header__btn--logout:hover {
+  transform: scale(1.08);
+  opacity: 0.9;
 }

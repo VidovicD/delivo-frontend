@@ -6,13 +6,18 @@ import paket from "../../assets/paket.png";
 import hrana from "../../assets/hrana.png";
 import kamion from "../../assets/kamion.png";
 import pin from "../../assets/pin.png";
-import magnifier from "../../assets/magnifier.png";
 
 import { useNavigate } from "react-router-dom";
 import FloatingIcons from "../../components/floating-icons/FloatingIcons";
 
 function HeroSection() {
   const navigate = useNavigate();
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && e.target.value.trim()) {
+      navigate("/izrada");
+    }
+  };
 
   return (
     <section className="hero">
@@ -30,6 +35,7 @@ function HeroSection() {
           className="hero__logo"
         />
       </div>
+
       <div className="hero__cta">
         <div className="hero__search">
           <img
@@ -42,18 +48,8 @@ function HeroSection() {
             type="text"
             className="hero__search-input"
             placeholder="Unesite adresu isporuke..."
+            onKeyDown={handleKeyDown}
           />
-
-          <button
-            className="hero__search-button"
-            onClick={() => navigate("/zakazivanje")}
-          >
-            <img
-              src={magnifier}
-              alt="Pretraga"
-              className="hero__search-magnifier"
-            />
-          </button>
         </div>
       </div>
     </section>

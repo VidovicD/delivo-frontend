@@ -5,6 +5,9 @@ import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 
+import { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
+
 /* PAGES */
 import HomePage from "./pages/home/HomePage";
 /*import PricingPage from "./pages/pricing/PricingPage";*/
@@ -20,13 +23,34 @@ import Zakazivanje from "./pages/Zakazivanje";
 import ComingSoon from "./pages/coming-soon/ComingSoon";
 
 function Delivo() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+  // 1️⃣ Provera odmah pri učitavanju
+  supabase.auth.getUser().then(({ data }) => {
+    setUser(data.user);
+  });
+
+  // 2️⃣ Slušanje login / logout promena
+  const { data: authListener } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      setUser(session?.user ?? null);
+    }
+  );
+
+  return () => {
+    authListener.subscription.unsubscribe();
+  };
+}, []);
+
   return (
     <Router>
       <ScrollToTop />
-      <Header />
+      <Header user={user} />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/izrada" element={<ComingSoon />} />
         <Route path="/cenovnik" element={<ComingSoon />} />
         <Route path="/usluge" element={<Services />} />
         <Route path="/pravna" element={<ComingSoon />} />

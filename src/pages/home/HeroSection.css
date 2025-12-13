@@ -24,14 +24,14 @@
 /* LOGO */
 
 .hero__logo-wrapper {
-  padding-top: clamp(30px, 5vw, 40px);
-  padding-bottom: clamp(20px, 5vw, 40px);
+  padding-top: clamp(60px, 5vw, 80px);
+  padding-bottom: clamp(10px, 6vw, 30px);
   z-index: 10;
   animation: hero-slide-in 1s ease-out forwards;
 }
 
 .hero__logo {
-  width: clamp(160px, 30vw, 250px);
+  width: clamp(160px, 30vw, 230px);
   transition: transform 0.3s ease;
 }
 
@@ -92,24 +92,25 @@
 .hero__search-pin {
   width: clamp(18px, 4vw, 25px);
   height: clamp(18px, 4vw, 25px);
-  margin: 0 clamp(6px, 1vw, 10px);
+  margin: 0 clamp(6px, 1vw, 15px);
   opacity: 0.85;
+  
 }
 
 /* INPUT */
 
 .hero__search-input {
   width: 100%;
-  padding: clamp(6px, 2vw, 10px)
+  padding: clamp(7px, 2.2vw, 12px)
            clamp(12px, 2vw, 14px)
            clamp(6px, 2vw, 10px)
-           clamp(4px, 1vw, 5px);
+           clamp(4px, 1vw, 0px);
 
   border: none;
   background: transparent;
   outline: none;
 
-  font-size: clamp(10px, 3.3vw, 20px);
+  font-size: clamp(10px, 3.5vw, 20px);
   font-weight: 500;
 }
 
@@ -143,11 +144,4 @@
   z-index: 2; /* 🔑 iznad inputa */
 
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* MAGNIFIER ICON */
-
-.hero__search-magnifier {
-  width: clamp(14px, 3.5vw, 20px);
-  height: clamp(4px, 3.5vw, 20px);
 }

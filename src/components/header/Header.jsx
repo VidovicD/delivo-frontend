@@ -1,150 +1,116 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Link, NavLink } from "react-router-dom";
-
+import React, { useEffect, useState } from "react";
 import "./Header.css";
+
 import logo from "../../assets/TRANSPARENT.png";
+import userIcon from "../../assets/user.png";
 
-const scrollToTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-};
+import AuthModal from "../auth-modal/AuthModal";
 
-function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+import { supabase } from "../../supabaseClient";
 
-  // Auto-hide header on scroll
-  const controlHeader = useCallback(() => {
-    if (window.scrollY > lastScrollY && window.scrollY > 100) {
-      setShowHeader(false);
-    } else {
-      setShowHeader(true);
-    }
-    setLastScrollY(window.scrollY);
-  }, [lastScrollY]);
+function Header({ user }) {
+  const [visible, setVisible] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("login"); // "login" | "register"
 
-  // Scroll listener
   useEffect(() => {
-    window.addEventListener("scroll", controlHeader);
-    return () => window.removeEventListener("scroll", controlHeader);
-  }, [controlHeader]);
+    let lastScrollY = window.scrollY;
 
-  // Close mobile menu on resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 876 && menuOpen) {
-        setMenuOpen(false);
+    const onScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        setVisible(false);
+      } else {
+        setVisible(true);
       }
+
+      lastScrollY = currentScrollY;
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [menuOpen]);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  const getActiveClass = ({ isActive }) =>
-    isActive ? "active-link" : "";
+  const openLogin = () => {
+    setAuthMode("login");
+    setShowAuthModal(true);
+  };
+
+  const openRegister = () => {
+    setAuthMode("register");
+    setShowAuthModal(true);
+  };
 
   return (
-    <>
-      <header className={`main-header ${showHeader ? "visible" : "hidden"}`}>
-        <div className="header-left">
-          <NavLink to="/" onClick={scrollToTop}>
-            <img src={logo} alt="Delivo logo" className="logo" />
-          </NavLink>
+  <>
+    <header className={`header ${visible ? "visible" : "hidden"}`}>
+      <div className="header__left">
+        <img src={logo} alt="Delivo logo" className="header__logo" />
+      </div>
+
+      <div className="header__right">
+        {/* DESKTOP */}
+        <div className="header__auth-desktop">
+          {user ? (
+            <button
+              className="header__btn header__btn--logout"
+              onClick={async () => {
+                await supabase.auth.signOut();
+              }}
+            >
+              Odloguj se
+            </button>
+          ) : (
+            <>
+              <button
+                className="header__btn header__btn--login"
+                onClick={openLogin}
+              >
+                Prijavi se
+              </button>
+
+              <button
+                className="header__btn header__btn--register"
+                onClick={openRegister}
+              >
+                Registruj se
+              </button>
+            </>
+          )}
         </div>
 
-        <nav className="navigacija">
-          <ul>
-            <li>
-              <Link to="/" onClick={scrollToTop}>Početna</Link>
-            </li>
-            <li>
-              <Link to="/usluge">Usluge</Link>
-            </li>
-            <li>
-              <Link to="/cenovnik">Cenovnik</Link>
-            </li>
-            <li>
-              <Link to="/pravna">Pravna lica</Link>
-            </li>
-            <li>
-              <Link to="/kontakt">Kontakt</Link>
-            </li>
-          </ul>
-        </nav>
-
-        <div
-          className="hamburger"
-          onClick={() => setMenuOpen((prev) => !prev)}
-        >
-          <div />
-          <div />
-          <div />
+        {/* MOBILE */}
+        <div className="header__auth-mobile">
+          {user ? (
+            <img
+              src={userIcon}
+              alt="Logout"
+              className="header__user-icon"
+              onClick={async () => {
+                await supabase.auth.signOut();
+              }}
+            />
+          ) : (
+            <img
+              src={userIcon}
+              alt="Prijava / Registracija"
+              className="header__user-icon"
+              onClick={openLogin}
+            />
+          )}
         </div>
-      </header>
-
-      {/* Mobile overlay menu */}
-      <nav className={`overlay-menu ${menuOpen ? "open" : ""}`}>
-        <div
-          className="close-btn"
-          onClick={() => setMenuOpen(false)}
-        >
-          ×
-        </div>
-
-        <ul>
-          <li>
-            <NavLink
-              to="/"
-              className={getActiveClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              Početna
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/usluge"
-              className={getActiveClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              Usluge
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/cenovnik"
-              className={getActiveClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              Cenovnik
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/pravna"
-              className={getActiveClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              Pravna lica
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/kontakt"
-              className={getActiveClass}
-              onClick={() => setMenuOpen(false)}
-            >
-              Kontakt
-            </NavLink>
-          </li>
-        </ul>
-      </nav>
-    </>
-  );
+      </div>
+    </header>
+    {showAuthModal && (
+      <AuthModal
+        mode={authMode}
+        onClose={() => setShowAuthModal(false)}
+        onSwitch={(mode) => setAuthMode(mode)}
+      />
+    )}
+  </>
+);
 }
 
 export default Header;
