@@ -1,13 +1,20 @@
+/* RESET + BOX MODEL */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+/* GLOBAL FONT */
+:root {
+  font-family: "Inter", sans-serif;
+}
+
+/* BODY BASE */
 body {
   margin: 0;
-  font-family: "Open Sans", sans-serif;
+  overflow-x: hidden;
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }

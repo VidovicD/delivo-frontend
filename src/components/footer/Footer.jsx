@@ -7,7 +7,7 @@ import InstagramIcon from "../../assets/instagram.png";
 import TikTokIcon from "../../assets/tiktok.png";
 import ViberIcon from "../../assets/viber.png";
 import WhatsAppIcon from "../../assets/whatsapp.png";
-import FooterLogo from "../../assets/TRANSPARENT.png";
+import FooterLogo from "../../assets/headerlogo.png";
 
 const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });

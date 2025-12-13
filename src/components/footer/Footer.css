@@ -1,6 +1,5 @@
 /* Glavni footer */
 footer {
-  font-family: 'Open Sans', sans-serif;
   box-shadow: 0 -5px 40px rgba(0,0,0,0.1), 0 5px 40px rgba(0,0,0,0.1);
   position: relative;
   z-index: 1000;
@@ -36,14 +35,14 @@ footer {
 
 /* Kolone */
 .footer-column h4 {
-  margin-bottom: 10px;
+  margin-bottom: 13px;
   font-size: 22px;
   cursor: default;
   transition: font-size 0.3s ease;
 }
 .footer-column p,
 .footer-column li {
-  margin: 5px 0;
+  margin: 8px 0;
   cursor: default;
 }
 .footer-column ul {
