@@ -29,9 +29,7 @@ function HeroSection() {
     // formatted address
     const formatted = place?.formatted_address;
 
-    // lat/lng
-    const lat = place?.geometry?.location?.lat?.();
-    const lng = place?.geometry?.location?.lng?.();
+    // lat/lng ćemo koristiti kasnije (Supabase)
 
     if (!formatted) return;
 
@@ -39,12 +37,6 @@ function HeroSection() {
       `/restaurants?address=${encodeURIComponent(formatted)}`
     );
 
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && e.target.value.trim()) {
-      navigate("/izrada");
-    }
   };
 
   return (

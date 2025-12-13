@@ -34,12 +34,6 @@ const EyeClosed = () => (
 
 /* ================= HELPERS ================= */
 
-const getPasswordStrength = (password) => {
-  if (password.length < 6) return "weak";
-  if (/[A-Z]/.test(password) && /[0-9]/.test(password)) return "strong";
-  return "medium";
-};
-
 const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 const getAuthErrorMessage = (err) => {
@@ -155,10 +149,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
   }, [mode]);
 
   useEffect(() => {
-    setPasswordStrength(getPasswordStrength(password));
-  }, [password]);
-
-  useEffect(() => {
     if (step === "success") {
       if (isMobile() && navigator.vibrate) navigator.vibrate(40);
 
@@ -200,23 +190,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
   }, [email]);
 
   /* ================= GOOGLE LOGIN ================= */
-
-  const resetAuthForm = () => {
-    // LOGIN reset
-    setLoginEmail("");
-    setLoginPassword("");
-
-    // REGISTER reset
-    setRegisterName("");
-    setRegisterEmail("");
-    setRegisterPassword("");
-
-    // UI reset
-    setFormError("");
-    setResendSuccess("");
-    setNeedsEmailVerification(false);
-    setShowPassword(false);
-  };
 
   const handleGoogleLogin = async () => {
     if (loading) return;
