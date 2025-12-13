@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import { Autocomplete } from "@react-google-maps/api";
+
 import "./HeroSection.css";
 
 import logo from "../../assets/logo.png";
@@ -12,6 +14,32 @@ import FloatingIcons from "../../components/floating-icons/FloatingIcons";
 
 function HeroSection() {
   const navigate = useNavigate();
+  const [autocomplete, setAutocomplete] = useState(null);
+  const [address, setAddress] = useState("");
+
+  const onLoad = (auto) => {
+    setAutocomplete(auto);
+  };
+
+  const onPlaceChanged = () => {
+    if (!autocomplete) return;
+
+    const place = autocomplete.getPlace();
+
+    // formatted address
+    const formatted = place?.formatted_address;
+
+    // lat/lng
+    const lat = place?.geometry?.location?.lat?.();
+    const lng = place?.geometry?.location?.lng?.();
+
+    if (!formatted) return;
+
+    navigate(
+      `/restaurants?address=${encodeURIComponent(formatted)}`
+    );
+
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && e.target.value.trim()) {
@@ -44,12 +72,32 @@ function HeroSection() {
             className="hero__search-pin"
           />
 
+        <Autocomplete
+          onLoad={onLoad}
+          onPlaceChanged={onPlaceChanged}
+          options={{
+            types: ["address"],
+            componentRestrictions: { country: "rs" },
+
+            // grubo ograničenje na Novi Sad (bounds)
+            bounds: {
+              north: 45.30,
+              south: 45.20,
+              east: 19.95,
+              west: 19.75,
+            },
+            strictBounds: true,
+          }}
+        >
           <input
             type="text"
             className="hero__search-input"
             placeholder="Unesite adresu isporuke..."
-            onKeyDown={handleKeyDown}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
           />
+        </Autocomplete>
+
         </div>
       </div>
     </section>

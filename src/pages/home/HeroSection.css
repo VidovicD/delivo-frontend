@@ -145,3 +145,8 @@
 
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.pac-container {
+  z-index: 99999 !important;
+  font-family: inherit;
+}
