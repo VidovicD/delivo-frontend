@@ -515,7 +515,7 @@ function AuthModal({ mode, onClose, onSwitch }) {
             )}
           </div>
         )
-        
+
         {step === "forgot" && (
           <>
             <div className="auth-hero">
@@ -580,7 +580,8 @@ function AuthModal({ mode, onClose, onSwitch }) {
                 Registracija
               </div>
 
-              <div className={`auth-indicator ${mode}`} /></div>
+              <div className={`auth-indicator ${mode}`} />
+            </div>
               
               <div className="auth-form">
                 {mode === "register" && (
