@@ -87,7 +87,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
   const [registerPassword, setRegisterPassword] = useState("");
 
   const email = mode === "login" ? loginEmail : registerEmail;
-  const password = mode === "login" ? loginPassword : registerPassword;
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -520,11 +519,10 @@ function AuthModal({ mode, onClose, onSwitch }) {
         {step === "forgot" && (
           <>
             <div className="auth-hero">
-              <h2>{mode === "login" ? "Prijava" : "Registracija"}</h2>
+              <h2>Zaboravljena lozinka</h2>
             </div>
 
             <div className="auth-form">
-
               <div className="form-field">
                 <label>Email adresa</label>
                 <input
@@ -538,6 +536,15 @@ function AuthModal({ mode, onClose, onSwitch }) {
                 />
               </div>
 
+              {/* ✅ OVO JE FIX */}
+              <button
+                className="auth-submit"
+                onClick={handleForgotPassword}
+                disabled={loading}
+              >
+                Pošalji link za reset lozinke
+              </button>
+
               <button
                 type="button"
                 className="auth-link"
@@ -545,6 +552,8 @@ function AuthModal({ mode, onClose, onSwitch }) {
               >
                 Nazad
               </button>
+
+              {formError && <div className="error-text">{formError}</div>}
             </div>
           </>
         )}
