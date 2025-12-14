@@ -514,8 +514,8 @@ function AuthModal({ mode, onClose, onSwitch }) {
               </button>
             )}
           </div>
-        )}
-
+        )
+        
         {step === "forgot" && (
           <>
             <div className="auth-hero">
