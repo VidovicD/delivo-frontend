@@ -514,7 +514,7 @@ function AuthModal({ mode, onClose, onSwitch }) {
               </button>
             )}
           </div>
-        )
+        )}
 
         {step === "forgot" && (
           <>
@@ -565,7 +565,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
             </div>
 
             <div className="auth-tabs">
-
               <div
                 className={`auth-tab ${mode === "login" ? "active" : ""}`}
                 onClick={() => switchMode("login")}
@@ -582,7 +581,7 @@ function AuthModal({ mode, onClose, onSwitch }) {
 
               <div className={`auth-indicator ${mode}`} />
             </div>
-              
+
               <div className="auth-form">
                 {mode === "register" && (
                   <>
