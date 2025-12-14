@@ -1,20 +1,12 @@
-/* RESET + BOX MODEL */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
-/* GLOBAL FONT */
-:root {
-  font-family: "Inter", sans-serif;
-}
-
-/* BODY BASE */
+html,
 body {
   margin: 0;
   overflow-x: hidden;
-
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: "Nunito", sans-serif;
 }

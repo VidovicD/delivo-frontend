@@ -6,57 +6,62 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import "./assets/styles/colors.css";
+
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
-import ScrollToTop from "./components/ScrollToTop";
+import AddPasswordModal from "./components/add-password/AddPasswordModal";
+import AuthModal from "./components/auth-modal/AuthModal";
 
 import { supabase } from "./supabaseClient";
 
-/* PAGES */
 import HomePage from "./pages/home/HomePage";
-import Services from "./pages/services/ServicesPage";
-import Blog from "./pages/Blog";
-import FAQ from "./pages/FAQ";
-import Zaposlenje from "./pages/Zaposlenje";
-import Politika from "./pages/Politika";
-import Uslovi from "./pages/Uslovi";
-import Zakazivanje from "./pages/Zakazivanje";
-import ComingSoon from "./pages/coming-soon/ComingSoon";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 
-/* GOOGLE */
-import { LoadScript } from "@react-google-maps/api";
+/* =========================
+   APP LAYOUT
+========================= */
 
-/* ADD PASSWORD */
-import AddPasswordModal from "./components/add-password/AddPasswordModal";
+function AppLayout({
+  user,
+  showAddPassword,
+  setShowAddPassword,
+  showAuthModal,
+  setShowAuthModal,
+  authMode,
+  setAuthMode,
+}) {
+  const { pathname } = useLocation();
+  const hideHeader = pathname.startsWith("/restaurants");
 
-const libraries = ["places"];
+  // 🔒 SCROLL LOCK KAD JE MODAL OTVOREN
+  useEffect(() => {
+    const isAnyModalOpen = showAddPassword || showAuthModal;
 
-/* 🔑 Layout wrapper da možemo da koristimo useLocation */
-function AppLayout({ user, showAddPassword, setShowAddPassword }) {
-  const location = useLocation();
+    document.documentElement.style.overflow = isAnyModalOpen ? "hidden" : "";
+    document.body.style.overflow = isAnyModalOpen ? "hidden" : "";
 
-  // ❗ sakrivamo globalni header na /restaurants
-  const hideHeader = location.pathname.startsWith("/restaurants");
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+    };
+  }, [showAddPassword, showAuthModal]);
 
   return (
     <>
-      {!hideHeader && <Header user={user} />}
+      {!hideHeader && (
+        <Header
+          user={user}
+          onAuthOpen={(mode) => {
+            setAuthMode(mode);
+            setShowAuthModal(true);
+          }}
+        />
+      )}
 
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/restaurants" element={<RestaurantsPage />} />
-        <Route path="/izrada" element={<ComingSoon />} />
-        <Route path="/cenovnik" element={<ComingSoon />} />
-        <Route path="/usluge" element={<Services />} />
-        <Route path="/pravna" element={<ComingSoon />} />
-        <Route path="/kontakt" element={<ComingSoon />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/faq" element={<FAQ />} />
-        <Route path="/zaposlenje" element={<Zaposlenje />} />
-        <Route path="/politika" element={<Politika />} />
-        <Route path="/uslovi" element={<Uslovi />} />
-        <Route path="/zakazivanje" element={<Zakazivanje />} />
       </Routes>
 
       <Footer />
@@ -64,45 +69,64 @@ function AppLayout({ user, showAddPassword, setShowAddPassword }) {
       {showAddPassword && (
         <AddPasswordModal onSuccess={() => setShowAddPassword(false)} />
       )}
+
+      {showAuthModal && (
+        <AuthModal
+          mode={authMode}
+          onClose={() => {
+            setShowAuthModal(false);
+            setAuthMode(null);
+          }}
+          onSwitch={setAuthMode}
+        />
+      )}
     </>
   );
 }
 
+/* =========================
+   ROOT APP
+========================= */
+
 function Delivo() {
   const [user, setUser] = useState(null);
+
   const [showAddPassword, setShowAddPassword] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
 
-  /* OAuth exchange */
+  // OAuth redirect
   useEffect(() => {
-    const run = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (!code) return;
 
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    };
-    run();
+    supabase.auth.exchangeCodeForSession(code).then(() => {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    });
   }, []);
 
-  /* Auth state */
+  // Auth init + listener
   useEffect(() => {
+    let isMounted = true;
+
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user ?? null);
+      if (!isMounted) return;
+      setUser(data?.user ?? null);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
+    const { data: subscription } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
+
         if (event === "SIGNED_IN" && session?.user) {
-          const user = session.user;
-          setUser(user);
+          const u = session.user;
+          setUser(u);
 
-          const provider = user.app_metadata?.provider;
-          const passwordAlreadySet =
-            user.user_metadata?.password_set === true;
-
-          if (provider === "google" && !passwordAlreadySet) {
+          if (
+            u.app_metadata?.provider === "google" &&
+            u.user_metadata?.password_set !== true
+          ) {
             setShowAddPassword(true);
           }
         }
@@ -115,24 +139,23 @@ function Delivo() {
     );
 
     return () => {
-      listener.subscription.unsubscribe();
+      isMounted = false;
+      subscription?.subscription?.unsubscribe();
     };
   }, []);
 
   return (
-    <LoadScript
-      googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_KEY}
-      libraries={libraries}
-    >
-      <Router>
-        <ScrollToTop />
-        <AppLayout
-          user={user}
-          showAddPassword={showAddPassword}
-          setShowAddPassword={setShowAddPassword}
-        />
-      </Router>
-    </LoadScript>
+    <Router>
+      <AppLayout
+        user={user}
+        showAddPassword={showAddPassword}
+        setShowAddPassword={setShowAddPassword}
+        showAuthModal={showAuthModal}
+        setShowAuthModal={setShowAuthModal}
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+      />
+    </Router>
   );
 }
 

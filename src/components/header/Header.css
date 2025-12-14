@@ -2,9 +2,7 @@
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 1001;
-
-  padding: 20px 32px;
-
+  padding: 30px 50px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -18,18 +16,35 @@
   padding: 10px 22px;
   border: none;
   border-radius: 999px;
-
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  font-family: "Inter", sans-serif;
-  
-  background: #142127;
-  color: #ffeea0;
-
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background: var(--brand-accent);
+  color: var(--brand-neutral2);
+  transition: background-color 0.15s ease;
 }
 
 .header__btn:hover {
-  background: #1f2d33;
+  background: var(--brand-accent-hover);
+}
+
+/* ===============================
+   TEMP MOBILE HEADER FIX (TEST)
+   može slobodno da se obriše
+   =============================== */
+@media (max-width: 480px) {
+  .header {
+    padding: 14px 16px;
+  }
+
+  .header__right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .header__btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 999px;
+  }
 }

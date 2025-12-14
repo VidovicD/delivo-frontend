@@ -10,22 +10,28 @@
   align-items: center;
 
   z-index: 99999;
+
+  overflow: hidden;
 }
 
 /* ================= MODAL ================= */
 
 .auth-modal {
-  background: #ffeea0; /* soft žuta box */
+  background: var(--brand-neutral);
   width: 100%;
-  max-width: 800px;
-  padding: 70px;
+  max-width: 500px;
+  padding: 0px 30px;
 
-  border-radius: 28px;
+  border-radius: 15px;
   position: relative;
   z-index: 100000;
 
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.15);
-  animation: modalIn 0.35s ease;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.auth-modal:focus {
+  outline: none;
 }
 
 @keyframes modalIn {
@@ -43,89 +49,83 @@
 
 .auth-close {
   position: absolute;
-  top: 30px;
-  right: 30px;
+  top: 25px;
+  right: 25px;
 
   background: none;
   border: none;
-  font-size: 22px;
+  font-size: 18px;
   cursor: pointer;
 
-  color: #142127;
-}
-
-.auth-close:hover {
-  opacity: 0.7;
+  color: var(--brand-accent);
 }
 
 /* ================= HERO ================= */
 
 .auth-hero {
-  text-align: center;
-  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 28px;
+  font-weight: 700;
+
 }
 
-.auth-avatar {
-  width: 70px;
-  height: 70px;
-  margin: 0 auto 12px;
-
-  border-radius: 50%;
-  background: #142127;
-  color: #ffeea0;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  font-size: 32px;
+.auth-hero h2 {
+margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
 }
 
 /* ================= TABS ================= */
 
 .auth-tabs {
   display: flex;
-  position: relative;
+  justify-content: center;
 
-  background: #fff6c9;
+  position: relative;
+  border: 1px solid #00000020;
+  background: var(--brand-neutral2);
   border-radius: 999px;
-  margin-bottom: 22px;
+
+  width: fit-content;
+  margin: 0 auto 20px;
+
+  padding: 3px;
 }
 
 .auth-tab {
-  flex: 1;
-  padding: 10px 0;
+  padding: 8px 0;
+  min-width: 120px;
 
   text-align: center;
   font-weight: 600;
   cursor: pointer;
   z-index: 2;
 
-  color: #fff6c9;
-  opacity: 0.7;
-}
+  color: var(--brand-accent);
 
-.auth-tab.active {
-  opacity: 1;
 }
 
 .auth-indicator {
   position: absolute;
   top: 4px;
   bottom: 4px;
-  width: 50%;
+  left: 4px;
 
-  background: #142127;
+  width: 120px;        /* mora da odgovara min-width */
+  border: 1px solid #00000020;
+  background: var(--brand-primary);
+
   border-radius: 999px;
-  transition: transform 0.35s ease;
+
+  transition: transform 0.35s ease 
 }
 
 .auth-indicator.login {
-  transform: translateX(0%);
+  transform: translateX(0);
 }
 
 .auth-indicator.register {
-  transform: translateX(100%);
+  transform: translateX(120px);
 }
 
 /* ================= FORM ================= */
@@ -137,25 +137,48 @@
 }
 
 .auth-form input {
-  padding: 14px 18px;
+  padding: 12px 20px;
 
-  border-radius: 999px;
-  border: 1px solid rgba(20, 33, 39, 0.6);
+  border-radius: 10px;
 
-  background: #fff6c9; /* SVETLIJI input */
+  background: var(--brand-neutral2); /* SVETLIJI input */
   font-size: 14px;
+  color: var(--brand-accent);
+  border: 1px solid #00000020;
   outline: none;
-  color: #142127;
-}
-
-.auth-form input::placeholder {
-  color: #142127;
-  opacity: 0.6;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .auth-form input:focus {
-  border-color: #ffb60f;
-  box-shadow: 0 0 0 3px rgba(255, 182, 15, 0.25);
+  border-color: var(--brand-accent);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
+}
+
+/* ================= INPUT ERROR STATE ================= */
+
+.auth-form input.error {
+  border-color: var(--brand-warning);
+  box-shadow: inset 0 0 0 1px var(--brand-warning);
+}
+
+.auth-form input.error:focus {
+  border-color: var(--brand-warning);
+  box-shadow: inset 0 0 0 1px var(--brand-warning);
+}
+
+/* ================= FORM FIELD (LABEL + INPUT) ================= */
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--brand-accent);
+  opacity: 0.9;
 }
 
 /* ================= PASSWORD ================= */
@@ -166,8 +189,8 @@
 
 .password-field input {
   width: 100%;
-  padding-right: 56px;
-  background: #fff6c9; /* ISTA BOJA */
+  padding-right: 50px;
+  background: var(--brand-neutral2) !important;
 }
 
 .toggle-password {
@@ -179,13 +202,13 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 5px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  color: #142127;
+  color: var(--brand-accent);
   opacity: 0.6;
 }
 
@@ -196,22 +219,22 @@
 /* ================= SUBMIT ================= */
 
 .auth-submit {
-  padding: 14px;
+  padding: 15px;
 
   border-radius: 999px;
   border: none;
 
-  background: #142127;
-  color: #fdf1b8;
+  background: #FFB60F;
+  border: 1px solid #00000020;
+  color: var(--brand-accent);
 
   font-weight: 600;
   cursor: pointer;
-
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
-.auth-submit:hover {
-  transform: scale(1.03);
+.auth-submit:hover:not(:disabled) {
+  background: var(--brand-primary-hover);  /* svetlija nijansa */
 }
 
 .auth-submit:disabled {
@@ -220,12 +243,24 @@
   transform: none;
 }
 
+/* ================= SUBMIT FOCUS FIX ================= */
+
+.auth-submit:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.auth-submit:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 /* ================= DIVIDER ================= */
 
 .auth-divider {
   display: flex;
   align-items: center;
-  margin: 18px 0;
+  margin: 15px 0px;
 }
 
 .auth-divider::before,
@@ -233,14 +268,14 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: #142127;
+  background: var(--brand-accent);
   opacity: 0.2;
 }
 
 .auth-divider span {
-  margin: 0 12px;
-  font-size: 13px;
-  color: #142127;
+  margin: 0 25px;
+  font-size: 15px;
+  color: var(--brand-accent);
   opacity: 0.6;
 }
 
@@ -249,12 +284,12 @@
 .auth-social {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .auth-social button {
-  padding: 12px;
-
+  padding: 15px;
+  border: none;
   border-radius: 999px;
   font-weight: 600;
   cursor: pointer;
@@ -263,18 +298,15 @@
 }
 
 .auth-social .google {
-  background: #fdf1b8;
-  border: 1px solid #142127;
-  color: #142127;
+  background: var(--brand-neutral2);
+  color: var(--brand-accent);
+  border: 1px solid #00000020;
 }
 
-.auth-social .google:hover {
-  transform: scale(1.02);
-}
 
 .auth-social .apple {
   background: #142127;
-  color: #fdf1b8;
+  color: var(--brand-neutral2);
 }
 
 .auth-social button:disabled {
@@ -283,57 +315,36 @@
   transform: none;
 }
 
-/* ================= LINKS ================= */
+/* ================= FORGOT PASSWORD LINK ================= */
 
-.auth-link {
-  display: block;
-  width: 100%;
+.auth-forgot {
   margin-top: 12px;
-  padding: 12px;
+  padding-bottom: 14px;
+  background: none;
+  border: none;
 
-  border-radius: 999px;
-  border: 1px solid #142127;
-  background: #fdf1b8;
-  color: #142127;
-
-  font-weight: 600;
-  font-size: 14px;
-  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brand-accent);
 
   cursor: pointer;
-  opacity: 1;
-
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  
+  width: 100%;
+  text-align: center;
 }
-
-.auth-link:hover {
-  transform: scale(1.02);
-  opacity: 0.95;
-}
-
-
 
 /* ================= WARNINGS & ERRORS ================= */
 
 .error-text {
-  font-size: 12px;
-  color: #142127;
-  margin-left: 12px;
-  margin-top: -6px;
+  font-size: 13px;
+  color: var(--brand-warning);
   opacity: 0.8;
-}
-
-.caps-warning {
-  font-size: 12px;
-  color: #142127;
-  margin-left: 12px;
-  margin-top: -6px;
-  opacity: 0.8;
+  text-align: center;
 }
 
 .success-text {
   font-size: 12px;
-  color: #142127;
+  color: #70fa00; /*previse pokusaja nisam uspeo namestiti */
   margin-left: 12px;
   margin-top: -6px;
   opacity: 0.8;
@@ -349,10 +360,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.password-field input {
-  background: #fff6c9 !important;
 }
 
 .auth-success {
@@ -419,11 +426,9 @@
   }
 }
 
-.auth-error,
-.error-text {
-  font-size: 13px;
-  color: #e74c3c; /* CRVENA */
+.auth-helper-text {
+  font-size: 14px;
   text-align: center;
-  padding-top: 5px;
-  margin-left: 0px;
+  color: var(--brand-accent);
+  opacity: 0.8;
 }

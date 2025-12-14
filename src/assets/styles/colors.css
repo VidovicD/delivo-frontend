@@ -1,0 +1,13 @@
+:root {
+
+  --brand-primary: #FFB60F;
+  --brand-primary-hover: #FFC533;
+  
+  --brand-neutral: #FFEFA8;  
+  --brand-neutral2: #FFF5C8;
+
+  --brand-accent: #070B0C;
+  --brand-accent-hover: #11181a;
+
+  --brand-warning: #ff0000;
+}
