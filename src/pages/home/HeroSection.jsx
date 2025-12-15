@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../supabaseClient"; // ⬅ DODATO
 
 import "./HeroSection.css";
 
@@ -19,12 +20,32 @@ function HeroSection() {
 
   const [autocomplete, setAutocomplete] = useState(null);
   const [address, setAddress] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true); // ⬅ DODATO
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
     libraries: LIBRARIES,
   });
 
+  /* 🔐 PROVERA SESIJE NA ULAZU */
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        navigate("/restaurants", { replace: true });
+        return;
+      }
+
+      setCheckingAuth(false);
+    };
+
+    checkSession();
+  }, [navigate]);
+
+  /* 🖼 PRELOAD SLIKA */
   useEffect(() => {
     const images = [logo, paket, hrana, kamion];
     images.forEach((src) => {
@@ -41,6 +62,9 @@ function HeroSection() {
 
     navigate(`/restaurants?address=${encodeURIComponent(formatted)}`);
   };
+
+  /* ⛔ dok proveravamo auth, ne renderujemo hero */
+  if (checkingAuth) return null;
 
   return (
     <section className="home">

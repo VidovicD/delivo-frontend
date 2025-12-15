@@ -75,6 +75,12 @@
 margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
 }
 
+/* ================= FORGOT PASSWORD TITLE ================= */
+
+.auth-hero--forgot h2 {
+  font-size: 28px;
+}
+
 /* ================= TABS ================= */
 
 .auth-tabs {
@@ -333,6 +339,60 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   text-align: center;
 }
 
+/* ================= FORGOT PASSWORD ACTIONS ================= */
+
+.auth-actions--forgot {
+  display: flex;
+  flex-direction: column;
+}
+
+/* uklanja dodatne razmake sa link dugmeta */
+.auth-actions--forgot .auth-link {
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 0;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+/* ================= FORGOT PASSWORD – BACK BUTTON FIX ================= */
+
+.auth-forgot-footer .auth-link {
+  padding-top: 10px !important;
+  padding-bottom: 20px !important;
+  margin-top: 0;
+}
+
+/* ================= AUTH LINK (BACK / TEXT BUTTON) ================= */
+
+.auth-link {
+  background: none;
+  border: none;
+
+  margin-top: 14px;
+  padding: 8px 0;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  color: var(--brand-accent);
+  cursor: pointer;
+
+  width: 100%;
+  text-align: center;
+
+  opacity: 0.85;
+}
+
+.auth-link:hover {
+  opacity: 1;
+}
+
+.auth-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ================= WARNINGS & ERRORS ================= */
 
 .error-text {
@@ -433,6 +493,14 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   opacity: 0.8;
 }
 
+/* ================= FORGOT FOOTER (WARNING + BACK) ================= */
+
+.auth-forgot-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0px; /* ⬅ manji razmak između warninga i Nazad */
+}
+
 /* ===============================
    TEMP MOBILE FULLSCREEN MODAL
    =============================== */
@@ -455,8 +523,8 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   }
 
   .auth-close {
-    top: 16px;
-    right: 16px;
+    top: 20px;
+    right: 20px;
     font-size: 20px;
   }
 

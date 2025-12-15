@@ -40,28 +40,10 @@ function AddPasswordModal({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* 🔒 disable scroll */
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => (document.body.style.overflow = "");
   }, []);
-
-  /* 🛑 ako nema sesije → zatvori modal */
-  useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        onSuccess();
-      }
-    };
-
-    checkSession();
-  }, [onSuccess]);
 
   const handleSubmit = async () => {
     setError("");
@@ -76,28 +58,16 @@ function AddPasswordModal({ onSuccess }) {
       return;
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setError("Sesija je istekla. Molimo prijavite se ponovo.");
-      return;
-    }
-
     setLoading(true);
 
     const { error: updateError } = await supabase.auth.updateUser({
       password,
-      data: {
-        password_set: true,
-      },
+      data: { password_set: true },
     });
 
     setLoading(false);
 
     if (updateError) {
-      console.error("UPDATE PASSWORD ERROR:", updateError);
       setError("Došlo je do greške prilikom čuvanja lozinke.");
       return;
     }
@@ -113,8 +83,7 @@ function AddPasswordModal({ onSuccess }) {
         <p>
           Uspešno ste se prijavili putem Google naloga.
           <br />
-          Kako biste ubuduće mogli da se prijavljujete i putem email adrese i
-          lozinke, potrebno je da sada postavite lozinku za svoj nalog.
+          Potrebno je da sada postavite lozinku.
         </p>
 
         {/* PASSWORD */}
@@ -123,13 +92,16 @@ function AddPasswordModal({ onSuccess }) {
             type={showPassword ? "text" : "password"}
             placeholder="Nova lozinka"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError("");
+            }}
+            className={error && password.length < 6 ? "error" : ""}
           />
           <button
             type="button"
             className="toggle-password"
             onClick={() => setShowPassword((p) => !p)}
-            aria-label="Prikaži ili sakrij lozinku"
           >
             {showPassword ? <EyeOpen /> : <EyeClosed />}
           </button>
@@ -141,29 +113,29 @@ function AddPasswordModal({ onSuccess }) {
             type={showPassword ? "text" : "password"}
             placeholder="Potvrdite lozinku"
             value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
+            onChange={(e) => {
+              setConfirm(e.target.value);
+              setError("");
+            }}
+            className={error && password !== confirm ? "error" : ""}
           />
         </div>
 
         {error && <div className="ap-error">{error}</div>}
 
-        <button
-          className="ap-btn"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? "Čuvanje u toku..." : "Sačuvaj lozinku"}
+        <button className="ap-btn" onClick={handleSubmit} disabled={loading}>
+          {loading ? "Čuvanje..." : "Sačuvaj lozinku"}
         </button>
 
         <button
           type="button"
-          className="ap-btn ap-btn-secondary"
+          className="ap-link"
           onClick={async () => {
             await supabase.auth.signOut();
             window.location.reload();
           }}
         >
-          Prijavite se ponovo
+          Odjavite se
         </button>
       </div>
     </div>

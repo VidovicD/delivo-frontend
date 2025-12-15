@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../../supabaseClient";
 import "./RestaurantsPage.css";
 
 function useQuery() {
@@ -8,6 +9,7 @@ function useQuery() {
 
 function RestaurantsPage() {
   const query = useQuery();
+  const navigate = useNavigate();
   const address = query.get("address");
   const [restaurants, setRestaurants] = useState([]);
 
@@ -21,11 +23,25 @@ function RestaurantsPage() {
     ]);
   }, [address]);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/", { replace: true });
+  };
+
   return (
     <div className="restaurants">
       <div className="restaurants__header">
         <h1 className="restaurants__title">Restorani za adresu</h1>
         <p className="restaurants__address">{address}</p>
+
+        {/* ⛔ ODJAVI SE */}
+        <button
+          type="button"
+          className="restaurants__logout"
+          onClick={handleLogout}
+        >
+          Odjavi se
+        </button>
       </div>
 
       <div className="restaurants__grid">

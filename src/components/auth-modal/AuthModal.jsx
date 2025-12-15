@@ -170,15 +170,18 @@ function AuthModal({ mode, onClose, onSwitch }) {
   useEffect(() => {
     if (step !== "success") return;
 
-    if (isMobile() && navigator.vibrate) navigator.vibrate(40);
+    // 🔐 SAMO POSLE LOGIN-A
+    if (successType === "auth") {
+      const t = setTimeout(() => {
+        onClose();
+        window.location.href = "/restaurants";
+      }, 900);
 
-    const t = setTimeout(() => {
-      onClose();
-      window.location.href = "/restaurants";
-    }, 900);
+      return () => clearTimeout(t);
+    }
 
-    return () => clearTimeout(t);
-  }, [step, onClose]);
+    // ⛔ forgot / verify / reset → nema redirecta
+  }, [step, successType, onClose]);
 
   const handleGoogleLogin = async () => {
     if (loading) return;
@@ -518,13 +521,15 @@ function AuthModal({ mode, onClose, onSwitch }) {
 
         {step === "forgot" && (
           <>
-            <div className="auth-hero">
+            <div className="auth-hero auth-hero--forgot">
               <h2>Zaboravljena lozinka</h2>
             </div>
 
             <div className="auth-form">
+              {/* EMAIL INPUT */}
               <div className="form-field">
                 <label>Email adresa</label>
+
                 <input
                   ref={emailRef}
                   type="email"
@@ -532,28 +537,58 @@ function AuthModal({ mode, onClose, onSwitch }) {
                   onChange={(e) => {
                     setLoginEmail(e.target.value);
                     setFormError("");
+                    setLoginTouched(false);
                   }}
+                  className={
+                    loginTouched &&
+                    (!loginEmail || !isValidEmail(loginEmail))
+                      ? "error"
+                      : ""
+                  }
                 />
               </div>
 
-              {/* ✅ OVO JE FIX */}
+              {/* SUBMIT */}
               <button
                 className="auth-submit"
-                onClick={handleForgotPassword}
+                onClick={() => {
+                  setLoginTouched(true);
+
+                  if (!loginEmail || !isValidEmail(loginEmail)) return;
+
+                  handleForgotPassword();
+                }}
                 disabled={loading}
               >
                 Pošalji link za reset lozinke
               </button>
 
-              <button
-                type="button"
-                className="auth-link"
-                onClick={() => setStep("auth")}
-              >
-                Nazad
-              </button>
+              {/* WARNING + BACK (bliže jedno drugom) */}
+              <div className="auth-forgot-footer">
+                {loginTouched && !loginEmail && (
+                  <div className="error-text">
+                    Email adresa je obavezna.
+                  </div>
+                )}
 
-              {formError && <div className="error-text">{formError}</div>}
+                {loginTouched && loginEmail && !isValidEmail(loginEmail) && (
+                  <div className="error-text">
+                    Unesite ispravnu email adresu.
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="auth-link"
+                  onClick={() => {
+                    setFormError("");
+                    setLoginTouched(false);
+                    setStep("auth");
+                  }}
+                >
+                  Nazad
+                </button>
+              </div>
             </div>
           </>
         )}

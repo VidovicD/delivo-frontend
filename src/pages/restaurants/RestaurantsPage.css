@@ -71,3 +71,27 @@
     font-size: 22px;
   }
 }
+
+/* ================= LOGOUT BUTTON ================= */
+
+.restaurants__logout {
+  margin-top: 24px;
+
+  background: none;
+  border: none;
+
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brand-accent);
+
+  cursor: pointer;
+  opacity: 0.85;
+
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.restaurants__logout:hover {
+  opacity: 1;
+}
