@@ -32,8 +32,6 @@ const EyeClosed = () => (
   </svg>
 );
 
-const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
 const getAuthErrorMessage = (err) => {
   if (!err) return "";
   const msg = (err.message || "").toLowerCase();
