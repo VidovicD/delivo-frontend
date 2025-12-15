@@ -20,7 +20,7 @@
   font-weight: 600;
   cursor: pointer;
   background: var(--brand-accent);
-  color: var(--brand-neutral2);
+  color: var(--brand-neutral);
   transition: background-color 0.15s ease;
 }
 
@@ -34,7 +34,7 @@
    =============================== */
 @media (max-width: 480px) {
   .header {
-    padding: 14px 16px;
+    padding: 14px 14px;
   }
 
   .header__right {
@@ -43,7 +43,7 @@
   }
 
   .header__btn {
-    padding: 8px 16px;
+    padding: 10px 16px;
     font-size: 14px;
     border-radius: 999px;
   }

@@ -94,7 +94,7 @@
 }
 
 .home__next {
-  min-height: 0vh; /* posle ovo vratiti na 30!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+  min-height: 30vh;
   background-color: var(--brand-neutral);
 }
 
@@ -144,5 +144,9 @@
     font-size: 14px;
     padding-block: 12px;
     padding-right: 14px;
+  }
+  
+  .home__next {
+  min-height: 0vh;
   }
 }
