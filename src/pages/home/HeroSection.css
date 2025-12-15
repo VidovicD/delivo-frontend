@@ -108,7 +108,7 @@
    =============================== */
 @media (max-width: 480px) {
   .hero {
-    min-height: 85vh;
+    min-height: 100vh;
     padding-inline: 16px;
   }
 
@@ -118,7 +118,7 @@
   }
 
   .hero__tagline h1 {
-    font-size: 24px;
+    font-size: 22px;
     line-height: 1.1;
   }
 
