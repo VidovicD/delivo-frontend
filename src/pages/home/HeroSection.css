@@ -94,7 +94,7 @@
 }
 
 .home__next {
-  min-height: 30vh;
+  min-height: 0vh; /* posle ovo vratiti na 30!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
   background-color: var(--brand-neutral);
 }
 
