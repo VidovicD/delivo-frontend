@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Autocomplete,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
 
 import "./HeroSection.css";
@@ -23,16 +20,13 @@ function HeroSection() {
   const [autocomplete, setAutocomplete] = useState(null);
   const [address, setAddress] = useState("");
 
-  // ✅ Google Maps lazy-load
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
     libraries: LIBRARIES,
   });
 
-  // ✅ PRELOAD HERO SLIKA (OVDE IDE)
   useEffect(() => {
     const images = [logo, paket, hrana, kamion];
-
     images.forEach((src) => {
       const img = new Image();
       img.src = src;
@@ -63,7 +57,6 @@ function HeroSection() {
             <p>Mi smo već krenuli.</p>
           </div>
 
-          {/* SEARCH */}
           <div className="hero__search">
             <img src={pin} alt="" className="hero__search-pin" />
 
@@ -102,8 +95,6 @@ function HeroSection() {
           </div>
         </div>
       </section>
-
-      <section className="home__next"></section>
     </section>
   );
 }
