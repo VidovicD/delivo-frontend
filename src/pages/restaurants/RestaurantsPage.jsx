@@ -18,8 +18,8 @@ function RestaurantsPage() {
   const [session, setSession] = useState(null);
 
   useEffect(() => {
-  supabase.auth.getSession().then(({ data }) => {
-    setSession(data.session);
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
     });
   }, []);
 

@@ -51,7 +51,7 @@ const getAuthErrorMessage = (err) => {
     return "Email adresa nije validna.";
 
   if (msg.includes("rate limit"))
-    return "Previše pokušaja. Pokušajte kasnije.";
+    return "Došlo je do privremene greške. Pokušajte ponovo za minut.";
 
   return "Došlo je do greške. Pokušajte ponovo.";
 };
@@ -167,35 +167,18 @@ function AuthModal({ mode, onClose, onSwitch }) {
     setNeedsEmailVerification(false);
   }, [email]);
 
-  useEffect(() => {
-    if (step !== "success") return;
-
-    // 🔐 SAMO POSLE LOGIN-A
-    if (successType === "auth") {
-      const t = setTimeout(() => {
-        onClose();
-      }, 900);
-
-      return () => clearTimeout(t);
-    }
-
-    // ⛔ forgot / verify / reset → nema redirecta
-  }, [step, successType, onClose]);
 
   const handleGoogleLogin = async () => {
     if (loading) return;
-    setLoading(true);
-    setFormError("");
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    sessionStorage.setItem("oauth_provider", "google");
+
+    await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
-
-    if (error) {
-      setLoading(false);
-      setFormError(getAuthErrorMessage(error));
-    }
   };
 
   const handleLoginNext = async () => {
@@ -224,6 +207,7 @@ function AuthModal({ mode, onClose, onSwitch }) {
       setLoading(false);
 
       if (error) {
+        console.log("CHECK-EMAIL ERROR:", error); // ⬅️ OVO
         setFormError("Greška na serveru. Pokušajte ponovo.");
         return;
       }
@@ -290,6 +274,7 @@ function AuthModal({ mode, onClose, onSwitch }) {
       setLoading(false);
 
       if (error) {
+        console.log("LOGIN ERROR:", error); // ⬅️ OVO
         if (error.message?.toLowerCase().includes("confirm")) {
           setNeedsEmailVerification(true);
           setResendSuccess("");
@@ -369,6 +354,7 @@ function AuthModal({ mode, onClose, onSwitch }) {
       setLoading(false);
 
       if (error) {
+        console.log("SIGNUP ERROR:", error); // ⬅️ OVO
         setFormError(getAuthErrorMessage(error));
         return;
       }
@@ -428,15 +414,27 @@ function AuthModal({ mode, onClose, onSwitch }) {
     const until = Date.now() + 60 * 1000;
     if (resendKey) localStorage.setItem(resendKey, until.toString());
 
-    if (!error) {
-      setResendCooldown(60);
-      setFormError("");
-      setResendSuccess(
-        "Email za potvrdu je ponovo poslat. Proverite inbox (i spam)."
-      );
-    } else {
-      setFormError(getAuthErrorMessage(error));
+    if (error) {
+      console.log("RESEND ERROR:", error);
+
+      const msg = (error.message || "").toLowerCase();
+
+      if (msg.includes("rate") || msg.includes("too many")) {
+        setFormError(
+          "Sačekajte minut pre ponovnog slanja verifikacionog emaila."
+        );
+      } else {
+        setFormError(getAuthErrorMessage(error));
+      }
+
+      return;
     }
+
+    setResendCooldown(60);
+    setFormError("");
+    setResendSuccess(
+      "Email za potvrdu je ponovo poslat. Proverite inbox (i spam)."
+    );
   };
 
   return (
@@ -457,7 +455,9 @@ function AuthModal({ mode, onClose, onSwitch }) {
       >
         <button
           className="auth-close"
+          disabled={loading}
           onClick={() => {
+            if (loading) return;
             setLoading(false);
             onClose();
           }}

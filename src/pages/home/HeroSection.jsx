@@ -35,7 +35,9 @@ function HeroSection() {
   const onPlaceChanged = () => {
     if (!autocomplete) return;
 
-    const formatted = autocomplete.getPlace()?.formatted_address;
+    const place = autocomplete.getPlace();
+    const formatted = place?.formatted_address;
+
     if (!formatted) return;
 
     navigate(`/restaurants?address=${encodeURIComponent(formatted)}`);
@@ -60,21 +62,19 @@ function HeroSection() {
             <img src={pin} alt="" className="hero__search-pin" />
 
             {isLoaded ? (
-              <Autocomplete
-                onLoad={setAutocomplete}
-                onPlaceChanged={onPlaceChanged}
-                options={{
-                  types: ["address"],
-                  componentRestrictions: { country: "rs" },
-                }}
-              >
-                <input
-                  className="hero__search-input"
-                  placeholder="Unesite adresu isporuke..."
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                />
-              </Autocomplete>
+            <Autocomplete
+              onLoad={setAutocomplete}
+              onPlaceChanged={onPlaceChanged}
+              options={{
+                types: ["address"],
+                componentRestrictions: { country: "rs" },
+              }}
+            >
+              <input
+                className="hero__search-input"
+                placeholder="Unesite adresu isporuke..."
+              />
+            </Autocomplete>
             ) : (
               <input
                 className="hero__search-input"

@@ -16,8 +16,8 @@ function Delivo() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -30,33 +30,56 @@ function Delivo() {
     });
 
     const { data } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        if (event === "INITIAL_SESSION") return;
+
+        if (event === "SIGNED_IN") {
+          const needsPassword =
+            session?.user &&
+            session.user.app_metadata?.provider === "google" &&
+            session.user.user_metadata?.password_set !== true;
+
+          if (needsPassword) return;
+
+          if (authReturnTo) {
+            navigate(authReturnTo, { replace: true });
+            setAuthReturnTo(null);
+          } else {
+            navigate("/restaurants", { replace: true });
+          }
+        }
+
+        if (event === "SIGNED_OUT") {
+          navigate("/", { replace: true });
+        }
       }
     );
 
     return () => data.subscription.unsubscribe();
-  }, []);
+  }, [authReturnTo, navigate]);
 
   const needsPassword =
     session?.user &&
-    session.user.app_metadata?.provider !== "email" &&
+    session.user.app_metadata?.provider === "google" &&
     session.user.user_metadata?.password_set !== true;
 
   useEffect(() => {
-    if (!session) return;
+    if (!session?.user) return;
+    if (needsPassword) return;
 
-    setShowAuthModal(false);
-    setAuthMode(null);
+    const isGoogleUser =
+      session.user.app_metadata?.provider === "google";
 
-    if (authReturnTo) {
-      navigate(authReturnTo, { replace: true });
-      setAuthReturnTo(null);
-    } else {
-      navigate("/restaurants", { replace: true });
+    const hasPassword =
+      session.user.user_metadata?.password_set === true;
+
+    if (isGoogleUser && !hasPassword) {
+      supabase.auth.signOut();
     }
-  }, [session, authReturnTo, navigate]);
+  }, [session, needsPassword]);
 
   const hideHeader = location.pathname.startsWith("/restaurants");
 
@@ -80,8 +103,6 @@ function Delivo() {
 
       <Footer />
 
-      {needsPassword && <AddPasswordModal />}
-
       {showAuthModal && (
         <AuthModal
           mode={authMode}
@@ -90,6 +111,17 @@ function Delivo() {
             setAuthMode(null);
           }}
           onSwitch={setAuthMode}
+        />
+      )}
+
+      {session && needsPassword && (
+        <AddPasswordModal
+          onSuccess={async () => {
+            const { data } = await supabase.auth.getSession();
+            setSession(data.session);
+            setUser(data.session?.user ?? null);
+            navigate("/restaurants", { replace: true });
+          }}
         />
       )}
     </>

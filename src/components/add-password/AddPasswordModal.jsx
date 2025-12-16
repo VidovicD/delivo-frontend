@@ -4,31 +4,16 @@ import { supabase } from "../../supabaseClient";
 
 const EyeOpen = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M1 12C3.5 7 7.5 4 12 4s8.5 3 11 8c-2.5 5-6.5 8-11 8s-8.5-3-11-8Z"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
+    <path d="M1 12C3.5 7 7.5 4 12 4s8.5 3 11 8c-2.5 5-6.5 8-11 8s-8.5-3-11-8Z" stroke="currentColor" strokeWidth="2" />
     <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
   </svg>
 );
 
 const EyeClosed = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M1 12C3.5 7 7.5 4 12 4s8.5 3 11 8c-2.5 5-6.5 8-11 8s-8.5-3-11-8Z"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
+    <path d="M1 12C3.5 7 7.5 4 12 4s8.5 3 11 8c-2.5 5-6.5 8-11 8s-8.5-3-11-8Z" stroke="currentColor" strokeWidth="2" />
     <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-    <line
-      x1="3"
-      y1="3"
-      x2="21"
-      y2="21"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
+    <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2" />
   </svg>
 );
 
@@ -89,7 +74,6 @@ function AddPasswordModal({ onSuccess }) {
           Potrebno je da sada postavite lozinku.
         </p>
 
-
         <div className="password-field">
           <input
             type={showPassword ? "text" : "password"}
@@ -99,7 +83,6 @@ function AddPasswordModal({ onSuccess }) {
               setPassword(e.target.value);
               setError("");
             }}
-            className={error && password.length < 6 ? "error" : ""}
           />
           <button
             type="button"
@@ -119,7 +102,6 @@ function AddPasswordModal({ onSuccess }) {
               setConfirm(e.target.value);
               setError("");
             }}
-            className={error && password !== confirm ? "error" : ""}
           />
         </div>
 
@@ -134,7 +116,7 @@ function AddPasswordModal({ onSuccess }) {
           className="ap-link"
           onClick={async () => {
             await supabase.auth.signOut();
-            window.location.reload();
+            window.location.href = "/";
           }}
         >
           Odjavite se
