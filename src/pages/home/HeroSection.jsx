@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
 
@@ -17,7 +17,6 @@ const LIBRARIES = ["places"];
 function HeroSection() {
   const navigate = useNavigate();
   const [autocomplete, setAutocomplete] = useState(null);
-  const [address, setAddress] = useState("");
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
@@ -62,19 +61,19 @@ function HeroSection() {
             <img src={pin} alt="" className="hero__search-pin" />
 
             {isLoaded ? (
-            <Autocomplete
-              onLoad={setAutocomplete}
-              onPlaceChanged={onPlaceChanged}
-              options={{
-                types: ["address"],
-                componentRestrictions: { country: "rs" },
-              }}
-            >
-              <input
-                className="hero__search-input"
-                placeholder="Unesite adresu isporuke..."
-              />
-            </Autocomplete>
+              <Autocomplete
+                onLoad={setAutocomplete}
+                onPlaceChanged={onPlaceChanged}
+                options={{
+                  types: ["address"],
+                  componentRestrictions: { country: "rs" },
+                }}
+              >
+                <input
+                  className="hero__search-input"
+                  placeholder="Unesite adresu isporuke..."
+                />
+              </Autocomplete>
             ) : (
               <input
                 className="hero__search-input"
