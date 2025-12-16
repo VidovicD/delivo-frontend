@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import "./AddPasswordModal.css";
 import { supabase } from "../../supabaseClient";
 
-/* 👁 ICONS */
 const EyeOpen = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <path
@@ -42,7 +41,9 @@ function AddPasswordModal({ onSuccess }) {
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => (document.body.style.overflow = "");
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
 
   const handleSubmit = async () => {
@@ -72,7 +73,9 @@ function AddPasswordModal({ onSuccess }) {
       return;
     }
 
-    onSuccess();
+    if (typeof onSuccess === "function") {
+      onSuccess();
+    }
   };
 
   return (
@@ -86,7 +89,7 @@ function AddPasswordModal({ onSuccess }) {
           Potrebno je da sada postavite lozinku.
         </p>
 
-        {/* PASSWORD */}
+
         <div className="password-field">
           <input
             type={showPassword ? "text" : "password"}
@@ -107,7 +110,6 @@ function AddPasswordModal({ onSuccess }) {
           </button>
         </div>
 
-        {/* CONFIRM */}
         <div className="password-field">
           <input
             type={showPassword ? "text" : "password"}

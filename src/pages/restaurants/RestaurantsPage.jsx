@@ -11,16 +11,44 @@ function RestaurantsPage() {
   const query = useQuery();
   const navigate = useNavigate();
   const address = query.get("address");
+
   const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
-    if (!address) return;
+  supabase.auth.getSession().then(({ data }) => {
+    setSession(data.session);
+    });
+  }, []);
 
-    setRestaurants([
-      { id: 1, name: "Restoran Napoli", eta: "30–45 min", rating: 4.6 },
-      { id: 2, name: "Burger House", eta: "25–40 min", rating: 4.4 },
-      { id: 3, name: "Asian Wok", eta: "35–50 min", rating: 4.7 },
-    ]);
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      setLoading(true);
+      setError(null);
+
+      let qb = supabase
+        .from("restaurants")
+        .select("id, name, address, phone, delivery_zone");
+
+      if (address) {
+        qb = qb.ilike("delivery_zone", `%${address}%`);
+      }
+
+      const { data, error } = await qb;
+
+      if (error) {
+        setError("Greška pri učitavanju restorana.");
+        setRestaurants([]);
+      } else {
+        setRestaurants(data || []);
+      }
+
+      setLoading(false);
+    };
+
+    fetchRestaurants();
   }, [address]);
 
   const handleLogout = async () => {
@@ -28,36 +56,79 @@ function RestaurantsPage() {
     navigate("/", { replace: true });
   };
 
+  const handleRestaurantClick = async (restaurantId) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+        navigate(
+        `/?login=1&returnTo=/restaurant/${restaurantId}`,
+        { replace: true }
+      );
+      return;
+    }
+
+    navigate(`/restaurant/${restaurantId}`);
+  };
+
   return (
     <div className="restaurants">
       <div className="restaurants__header">
         <h1 className="restaurants__title">Restorani za adresu</h1>
-        <p className="restaurants__address">{address}</p>
+        {address && <p className="restaurants__address">{address}</p>}
 
-        {/* ⛔ ODJAVI SE */}
-        <button
-          type="button"
-          className="restaurants__logout"
-          onClick={handleLogout}
-        >
-          Odjavi se
-        </button>
+        {session && (
+          <button
+            type="button"
+            className="restaurants__logout"
+            onClick={handleLogout}
+          >
+            Odjavi se
+          </button>
+        )}
       </div>
 
-      <div className="restaurants__grid">
-        {restaurants.map((r) => (
-          <div key={r.id} className="restaurant-card">
-            <div className="restaurant-card__name">{r.name}</div>
-            <div className="restaurant-card__meta">
-              <span>{r.eta}</span>
-              <span>★ {r.rating}</span>
+      {loading && (
+        <p style={{ textAlign: "center", marginTop: 40 }}>
+          Učitavanje restorana…
+        </p>
+      )}
+
+      {error && (
+        <p style={{ textAlign: "center", marginTop: 40, color: "red" }}>
+          {error}
+        </p>
+      )}
+
+      {!loading && !error && (
+        <div className="restaurants__grid">
+          {restaurants.map((r) => (
+            <div
+              key={r.id}
+              className="restaurant-card"
+              onClick={() => handleRestaurantClick(r.id)}
+            >
+              <div className="restaurant-card__name">{r.name}</div>
+
+              <div className="restaurant-card__meta">
+                <span>{r.address}</span>
+                {r.phone && <span>{r.phone}</span>}
+              </div>
+
+              <span className="restaurant-card__badge">
+                Besplatna dostava
+              </span>
             </div>
-            <span className="restaurant-card__badge">
-              Besplatna dostava
-            </span>
-          </div>
-        ))}
-      </div>
+          ))}
+
+          {restaurants.length === 0 && (
+            <p style={{ gridColumn: "1 / -1", textAlign: "center" }}>
+              Trenutno nema dostupnih restorana.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

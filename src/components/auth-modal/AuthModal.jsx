@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./AuthModal.css";
 import { supabase } from "../../supabaseClient";
+import appleLogo from "../../assets/apple.svg";
+import googleLogo from "../../assets/google.svg";
 
 const EyeOpen = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -172,7 +174,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
     if (successType === "auth") {
       const t = setTimeout(() => {
         onClose();
-        window.location.href = "/restaurants";
       }, 900);
 
       return () => clearTimeout(t);
@@ -188,22 +189,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
-    });
-
-    if (error) {
-      setLoading(false);
-      setFormError(getAuthErrorMessage(error));
-    }
-  };
-
-  const handleAppleLogin = async () => {
-    if (loading) return;
-    setLoading(true);
-    setFormError("");
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
       options: { redirectTo: window.location.origin },
     });
 
@@ -524,7 +509,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
             </div>
 
             <div className="auth-form">
-              {/* EMAIL INPUT */}
               <div className="form-field">
                 <label>Email adresa</label>
 
@@ -546,7 +530,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
                 />
               </div>
 
-              {/* SUBMIT */}
               <button
                 className="auth-submit"
                 onClick={() => {
@@ -561,7 +544,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
                 Pošalji link za reset lozinke
               </button>
 
-              {/* WARNING + BACK (bliže jedno drugom) */}
               <div className="auth-forgot-footer">
                 {loginTouched && !loginEmail && (
                   <div className="error-text">
@@ -619,7 +601,7 @@ function AuthModal({ mode, onClose, onSwitch }) {
                 {mode === "register" && (
                   <>
                     <div className="form-field">
-                      <label>Ime i prezime</label>
+                      <label>Ime</label>
                       <input
                         ref={nameRef}
                         type="text"
@@ -652,7 +634,6 @@ function AuthModal({ mode, onClose, onSwitch }) {
                   </>
                 )}
 
-                {/* EMAIL – sakriva se samo u login/password koraku */}
                 {!(mode === "login" && loginStep === "password") && (
                   <div className="form-field">
                     <label>Email adresa</label>
@@ -695,14 +676,12 @@ function AuthModal({ mode, onClose, onSwitch }) {
                   </button>
                 ) : (
                   <>
-                    {/* HELPER TEKST SAMO ZA LOGIN PASSWORD */}
                     {mode === "login" && loginStep === "password" && (
                       <p className="auth-helper-text">
                         Unesite lozinku da biste se prijavili
                       </p>
                     )}
 
-                    {/* PASSWORD */}
                     <div className="form-field">
                       <label>Lozinka</label>
                       <div className="password-field">
@@ -795,16 +774,28 @@ function AuthModal({ mode, onClose, onSwitch }) {
                 onClick={handleGoogleLogin}
                 disabled={loading}
               >
-                Nastavi sa Google
+                <img
+                  src={googleLogo}
+                  alt="Google"
+                  className="google-hig__icon"
+                />
+                <span>Nastavi sa Google</span>
               </button>
 
               <button
-                className="apple"
-                onClick={handleAppleLogin}
-                disabled={loading}
+                className="apple apple-hig"
+                disabled
               >
-                Nastavi sa Apple
+                <img
+                  src={appleLogo}
+                  alt="Apple"
+                  className="apple-hig__icon"
+                />
+                <span className="apple-hig__text">
+                  Nastavi sa Apple
+                </span>
               </button>
+
             </div>
 
             {mode === "login" && (

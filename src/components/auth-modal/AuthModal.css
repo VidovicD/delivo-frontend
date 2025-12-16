@@ -1,5 +1,3 @@
-/* ================= OVERLAY ================= */
-
 .auth-overlay {
   position: fixed;
   inset: 0;
@@ -13,8 +11,6 @@
 
   overflow: hidden;
 }
-
-/* ================= MODAL ================= */
 
 .auth-modal {
   background: var(--brand-neutral);
@@ -45,8 +41,6 @@
   }
 }
 
-/* ================= CLOSE ================= */
-
 .auth-close {
   position: absolute;
   top: 25px;
@@ -60,8 +54,6 @@
   color: var(--brand-accent);
 }
 
-/* ================= HERO ================= */
-
 .auth-hero {
   display: flex;
   flex-direction: column;
@@ -72,16 +64,12 @@
 }
 
 .auth-hero h2 {
-margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
+margin: 30px 0 20px 0px;
 }
-
-/* ================= FORGOT PASSWORD TITLE ================= */
 
 .auth-hero--forgot h2 {
   font-size: 28px;
 }
-
-/* ================= TABS ================= */
 
 .auth-tabs {
   display: flex;
@@ -117,7 +105,7 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   bottom: 4px;
   left: 4px;
 
-  width: 120px;        /* mora da odgovara min-width */
+  width: 120px;
   border: 1px solid #00000020;
   background: var(--brand-primary);
 
@@ -134,8 +122,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   transform: translateX(120px);
 }
 
-/* ================= FORM ================= */
-
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -147,7 +133,7 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
 
   border-radius: 10px;
 
-  background: var(--brand-neutral2); /* SVETLIJI input */
+  background: var(--brand-neutral2);
   font-size: 14px;
   color: var(--brand-accent);
   border: 1px solid #00000020;
@@ -160,8 +146,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   box-shadow: inset 0 0 0 1px var(--brand-accent);
 }
 
-/* ================= INPUT ERROR STATE ================= */
-
 .auth-form input.error {
   border-color: var(--brand-warning);
   box-shadow: inset 0 0 0 1px var(--brand-warning);
@@ -171,8 +155,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   border-color: var(--brand-warning);
   box-shadow: inset 0 0 0 1px var(--brand-warning);
 }
-
-/* ================= FORM FIELD (LABEL + INPUT) ================= */
 
 .form-field {
   display: flex;
@@ -186,8 +168,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   color: var(--brand-accent);
   opacity: 0.9;
 }
-
-/* ================= PASSWORD ================= */
 
 .password-field {
   position: relative;
@@ -222,10 +202,7 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   opacity: 1;
 }
 
-/* ================= SUBMIT ================= */
-
 .auth-submit {
-  padding: 15px;
 
   border-radius: 999px;
   border: none;
@@ -249,8 +226,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   transform: none;
 }
 
-/* ================= SUBMIT FOCUS FIX ================= */
-
 .auth-submit:focus {
   outline: none;
   box-shadow: none;
@@ -260,8 +235,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   outline: none;
   box-shadow: none;
 }
-
-/* ================= DIVIDER ================= */
 
 .auth-divider {
   display: flex;
@@ -285,43 +258,59 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   opacity: 0.6;
 }
 
-/* ================= SOCIAL ================= */
-
 .auth-social {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.auth-submit,
 .auth-social button {
-  padding: 15px;
-  border: none;
+  height: 50px;
+  padding: 0 22px;
+}
+
+.auth-social button {
+
   border-radius: 999px;
   font-weight: 600;
+
   cursor: pointer;
 
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-social .google {
   background: var(--brand-neutral2);
   color: var(--brand-accent);
   border: 1px solid #00000020;
+  gap: 8px;
 }
 
+.auth-social .google-hig__icon {
+  width: 18px;
+  height: 18px;
+}
 
-.auth-social .apple {
-  background: #142127;
-  color: var(--brand-neutral2);
+.auth-social .apple-hig {
+  background: #000000;
+  color: #ffffff;
+
+  border: none;
+  gap: 8px;
+}
+
+.auth-social .apple-hig__icon {
+  width: 18px;
+  height: 18px;
 }
 
 .auth-social button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
-
-/* ================= FORGOT PASSWORD LINK ================= */
 
 .auth-forgot {
   margin-top: 12px;
@@ -339,14 +328,11 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   text-align: center;
 }
 
-/* ================= FORGOT PASSWORD ACTIONS ================= */
-
 .auth-actions--forgot {
   display: flex;
   flex-direction: column;
 }
 
-/* uklanja dodatne razmake sa link dugmeta */
 .auth-actions--forgot .auth-link {
   font-size: 13px;
   font-weight: 500;
@@ -355,15 +341,11 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   padding-bottom: 14px;
 }
 
-/* ================= FORGOT PASSWORD – BACK BUTTON FIX ================= */
-
 .auth-forgot-footer .auth-link {
   padding-top: 10px !important;
   padding-bottom: 20px !important;
   margin-top: 0;
 }
-
-/* ================= AUTH LINK (BACK / TEXT BUTTON) ================= */
 
 .auth-link {
   background: none;
@@ -393,8 +375,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   cursor: not-allowed;
 }
 
-/* ================= WARNINGS & ERRORS ================= */
-
 .error-text {
   font-size: 13px;
   color: var(--brand-warning);
@@ -404,7 +384,7 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
 
 .success-text {
   font-size: 12px;
-  color: #70fa00; /*previse pokusaja nisam uspeo namestiti */
+  color: #70fa00;
   margin-left: 12px;
   margin-top: -6px;
   opacity: 0.8;
@@ -431,7 +411,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   padding: 20px 10px 10px;
 }
 
-/* naslov */
 .auth-success-title {
   margin-top: 6px;
   margin-bottom: 12px;
@@ -440,7 +419,6 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   color: #142127;
 }
 
-/* tekst */
 .auth-success-text {
   font-size: 14px;
   line-height: 1.55;
@@ -493,17 +471,12 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   opacity: 0.8;
 }
 
-/* ================= FORGOT FOOTER (WARNING + BACK) ================= */
-
 .auth-forgot-footer {
   display: flex;
   flex-direction: column;
-  gap: 0px; /* ⬅ manji razmak između warninga i Nazad */
+  gap: 0px;
 }
 
-/* ===============================
-   TEMP MOBILE FULLSCREEN MODAL
-   =============================== */
 @media (max-width: 480px) {
   .auth-overlay {
     align-items: stretch;
@@ -531,7 +504,7 @@ margin: 30px 0 20px 0px;   /* ⬅ kontrolisan razmak ispod */
   .auth-modal {
     display: flex;
     flex-direction: column;
-    justify-content: center; /* ⬅ vertikalno centriranje */
+    justify-content: center;
   }
     
   .auth-form input {

@@ -28,10 +28,7 @@
   background: var(--brand-accent-hover);
 }
 
-/* ===============================
-   TEMP MOBILE HEADER FIX (TEST)
-   može slobodno da se obriše
-   =============================== */
+
 @media (max-width: 480px) {
   .header {
     padding: 14px 14px;

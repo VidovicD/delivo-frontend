@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../supabaseClient"; // ⬅ DODATO
 
 import "./HeroSection.css";
 
@@ -17,35 +16,14 @@ const LIBRARIES = ["places"];
 
 function HeroSection() {
   const navigate = useNavigate();
-
   const [autocomplete, setAutocomplete] = useState(null);
   const [address, setAddress] = useState("");
-  const [checkingAuth, setCheckingAuth] = useState(true); // ⬅ DODATO
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
     libraries: LIBRARIES,
   });
 
-  /* 🔐 PROVERA SESIJE NA ULAZU */
-  useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        navigate("/restaurants", { replace: true });
-        return;
-      }
-
-      setCheckingAuth(false);
-    };
-
-    checkSession();
-  }, [navigate]);
-
-  /* 🖼 PRELOAD SLIKA */
   useEffect(() => {
     const images = [logo, paket, hrana, kamion];
     images.forEach((src) => {
@@ -62,9 +40,6 @@ function HeroSection() {
 
     navigate(`/restaurants?address=${encodeURIComponent(formatted)}`);
   };
-
-  /* ⛔ dok proveravamo auth, ne renderujemo hero */
-  if (checkingAuth) return null;
 
   return (
     <section className="home">
@@ -91,13 +66,6 @@ function HeroSection() {
                 options={{
                   types: ["address"],
                   componentRestrictions: { country: "rs" },
-                  strictBounds: true,
-                  bounds: {
-                    north: 45.3,
-                    south: 45.2,
-                    east: 19.95,
-                    west: 19.75,
-                  },
                 }}
               >
                 <input
@@ -111,8 +79,6 @@ function HeroSection() {
               <input
                 className="hero__search-input"
                 placeholder="Unesite adresu isporuke..."
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
                 disabled
               />
             )}

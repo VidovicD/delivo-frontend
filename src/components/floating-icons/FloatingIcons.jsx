@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import "./FloatingIcons.css";
 
 const ICON_COUNT = 50;
-const OPACITY_RANGE = [0.02, 0.04];
+const OPACITY_RANGE = [0.03, 0.06];
 const SIZE_RANGE = [35, 65];
 
 const MOBILE_SCALE = 0.6;
