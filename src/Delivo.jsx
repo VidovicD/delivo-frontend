@@ -16,7 +16,6 @@ function Delivo() {
   const navigate = useNavigate();
 
   const [session, setSession] = useState(null);
-  const [user, setUser] = useState(null);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
@@ -25,12 +24,10 @@ function Delivo() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      setUser(data.session?.user ?? null);
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
 
       if (event === "INITIAL_SESSION") return;
 
@@ -89,7 +86,6 @@ function Delivo() {
           onSuccess={async () => {
             const { data } = await supabase.auth.getSession();
             setSession(data.session);
-            setUser(data.session?.user ?? null);
             setShowAuthModal(false);
           }}
         />
@@ -100,7 +96,6 @@ function Delivo() {
           onSuccess={async () => {
             const { data } = await supabase.auth.getSession();
             setSession(data.session);
-            setUser(data.session?.user ?? null);
           }}
         />
       )}
