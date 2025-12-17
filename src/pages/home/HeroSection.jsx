@@ -36,10 +36,21 @@ function HeroSection() {
 
     const place = autocomplete.getPlace();
     const formatted = place?.formatted_address;
+    const location = place?.geometry?.location;
 
-    if (!formatted) return;
+    if (!formatted || !location) return;
 
-    navigate(`/restaurants?address=${encodeURIComponent(formatted)}`);
+    const lat = location.lat();
+    const lng = location.lng();
+
+    localStorage.setItem("delivery_address", formatted);
+    localStorage.setItem("delivery_lat", lat.toString());
+    localStorage.setItem("delivery_lng", lng.toString());
+
+    navigate(
+      `/restaurants?address=${encodeURIComponent(formatted)}&lat=${lat}&lng=${lng}`,
+      { replace: true }
+    );
   };
 
   return (
@@ -72,6 +83,7 @@ function HeroSection() {
                 <input
                   className="hero__search-input"
                   placeholder="Unesite adresu isporuke..."
+                  autoFocus
                 />
               </Autocomplete>
             ) : (

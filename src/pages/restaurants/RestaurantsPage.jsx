@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { supabase } from "../../supabaseClient";
 import "./RestaurantsPage.css";
 
@@ -7,20 +8,64 @@ function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
 
+function getDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 function RestaurantsPage() {
   const query = useQuery();
   const navigate = useNavigate();
+
   const address = query.get("address");
+  const lat = Number(query.get("lat"));
+  const lng = Number(query.get("lng"));
+
+  const hasAddress =
+    !!address && !Number.isNaN(lat) && !Number.isNaN(lng);
 
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [session, setSession] = useState(null);
+
+  const [showAddressInput, setShowAddressInput] = useState(false);
+  const [autocomplete, setAutocomplete] = useState(null);
+
+  const [hasSession, setHasSession] = useState(false);
+
+  const canInteract = hasSession && hasAddress;
+  const isDisabled = !canInteract;
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
+    libraries: ["places"],
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+      setHasSession(!!data.session);
     });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setHasSession(!!session);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -28,63 +73,97 @@ function RestaurantsPage() {
       setLoading(true);
       setError(null);
 
-      let qb = supabase
+      const { data, error } = await supabase
         .from("restaurants")
-        .select("id, name, address, phone, delivery_zone");
-
-      if (address) {
-        qb = qb.ilike("delivery_zone", `%${address}%`);
-      }
-
-      const { data, error } = await qb;
+        .select("id, name, address, lat, lng");
 
       if (error) {
         setError("Greška pri učitavanju restorana.");
         setRestaurants([]);
       } else {
-        setRestaurants(data || []);
+        setRestaurants(
+          (data || []).map((r) => ({
+            ...r,
+            distanceKm:
+              r.lat != null && r.lng != null
+                ? getDistanceKm(lat, lng, r.lat, r.lng)
+                : null,
+          }))
+        );
       }
 
       setLoading(false);
     };
 
     fetchRestaurants();
-  }, [address]);
+  }, [lat, lng]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/", { replace: true });
-  };
+  const handlePlaceChanged = () => {
+    if (!autocomplete) return;
 
-  const handleRestaurantClick = async (restaurantId) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const place = autocomplete.getPlace();
+    const formatted = place?.formatted_address;
+    const location = place?.geometry?.location;
 
-    if (!session) {
-        navigate(
-        `/?login=1&returnTo=/restaurant/${restaurantId}`,
-        { replace: true }
-      );
-      return;
-    }
+    if (!formatted || !location) return;
 
-    navigate(`/restaurant/${restaurantId}`);
+    const newLat = location.lat();
+    const newLng = location.lng();
+
+    localStorage.setItem("delivery_address", formatted);
+    localStorage.setItem("delivery_lat", newLat.toString());
+    localStorage.setItem("delivery_lng", newLng.toString());
+
+    setShowAddressInput(false);
+
+    navigate(
+      `/restaurants?address=${encodeURIComponent(
+        formatted
+      )}&lat=${newLat}&lng=${newLng}`,
+      { replace: true }
+    );
   };
 
   return (
     <div className="restaurants">
       <div className="restaurants__header">
-        <h1 className="restaurants__title">Restorani za adresu</h1>
-        {address && <p className="restaurants__address">{address}</p>}
+        <h1 className="restaurants__title">Restorani</h1>
 
-        {session && (
+        {showAddressInput ? (
+          isLoaded && (
+            <Autocomplete
+              onLoad={setAutocomplete}
+              onPlaceChanged={handlePlaceChanged}
+              options={{
+                types: ["address"],
+                componentRestrictions: { country: "rs" },
+              }}
+            >
+              <input
+                className="restaurants__address-input"
+                placeholder="Unesite adresu…"
+                autoFocus
+              />
+            </Autocomplete>
+          )
+        ) : hasAddress ? (
+          <>
+            <p className="restaurants__address">{address}</p>
+            <button
+              type="button"
+              className="restaurants__change-address"
+              onClick={() => setShowAddressInput(true)}
+            >
+              Promeni adresu
+            </button>
+          </>
+        ) : (
           <button
             type="button"
-            className="restaurants__logout"
-            onClick={handleLogout}
+            className="restaurants__change-address"
+            onClick={() => setShowAddressInput(true)}
           >
-            Odjavi se
+            Unesite adresu
           </button>
         )}
       </div>
@@ -106,27 +185,25 @@ function RestaurantsPage() {
           {restaurants.map((r) => (
             <div
               key={r.id}
-              className="restaurant-card"
-              onClick={() => handleRestaurantClick(r.id)}
+              className={`restaurant-card ${
+                isDisabled ? "restaurant-card--disabled" : ""
+              }`}
+              onClick={
+                !isDisabled
+                  ? () => navigate(`/restaurant/${r.id}`)
+                  : undefined
+              }
             >
               <div className="restaurant-card__name">{r.name}</div>
 
               <div className="restaurant-card__meta">
                 <span>{r.address}</span>
-                {r.phone && <span>{r.phone}</span>}
+                {r.distanceKm != null && (
+                  <span>{r.distanceKm.toFixed(1)} km</span>
+                )}
               </div>
-
-              <span className="restaurant-card__badge">
-                Besplatna dostava
-              </span>
             </div>
           ))}
-
-          {restaurants.length === 0 && (
-            <p style={{ gridColumn: "1 / -1", textAlign: "center" }}>
-              Trenutno nema dostupnih restorana.
-            </p>
-          )}
         </div>
       )}
     </div>

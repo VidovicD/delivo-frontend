@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
 import "./assets/styles/colors.css";
@@ -8,13 +8,13 @@ import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import AuthModal from "./components/auth-modal/AuthModal";
 import AddPasswordModal from "./components/add-password/AddPasswordModal";
+import RequireAuth from "./components/require-auth/RequireAuth";
 
 import HomePage from "./pages/home/HomePage";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 
 function Delivo() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
@@ -29,34 +29,39 @@ function Delivo() {
       setUser(data.session?.user ?? null);
     });
 
-    const { data } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        if (event === "INITIAL_SESSION") return;
+      if (event === "INITIAL_SESSION") return;
 
-        if (event === "SIGNED_IN") {
-          const needsPassword =
-            session?.user &&
-            session.user.app_metadata?.provider === "google" &&
-            session.user.user_metadata?.password_set !== true;
+      if (event === "SIGNED_IN") {
+        const needsPassword =
+          session?.user &&
+          session.user.app_metadata?.provider === "google" &&
+          session.user.user_metadata?.password_set !== true;
 
-          if (needsPassword) return;
+        if (needsPassword) return;
 
-          if (authReturnTo) {
-            navigate(authReturnTo, { replace: true });
-            setAuthReturnTo(null);
-          } else {
-            navigate("/restaurants", { replace: true });
-          }
+        const current = window.location.pathname + window.location.search;
+
+        const target =
+          authReturnTo && authReturnTo !== "/"
+            ? authReturnTo
+            : "/restaurants";
+
+        if (current !== target) {
+          navigate(target, { replace: true });
         }
 
-        if (event === "SIGNED_OUT") {
-          navigate("/", { replace: true });
-        }
+        setAuthReturnTo(null);
+        return;
       }
-    );
+
+      if (event === "SIGNED_OUT") {
+        navigate("/", { replace: true });
+      }
+    });
 
     return () => data.subscription.unsubscribe();
   }, [authReturnTo, navigate]);
@@ -66,35 +71,16 @@ function Delivo() {
     session.user.app_metadata?.provider === "google" &&
     session.user.user_metadata?.password_set !== true;
 
-  useEffect(() => {
-    if (!session?.user) return;
-    if (needsPassword) return;
-
-    const isGoogleUser =
-      session.user.app_metadata?.provider === "google";
-
-    const hasPassword =
-      session.user.user_metadata?.password_set === true;
-
-    if (isGoogleUser && !hasPassword) {
-      supabase.auth.signOut();
-    }
-  }, [session, needsPassword]);
-
-  const hideHeader = location.pathname.startsWith("/restaurants");
-
   return (
     <>
-      {!hideHeader && (
-        <Header
-          user={user}
-          onAuthOpen={(mode, returnTo) => {
-            setAuthMode(mode);
-            setAuthReturnTo(returnTo || null);
-            setShowAuthModal(true);
-          }}
-        />
-      )}
+      <Header
+        user={user}
+        onAuthOpen={(mode, returnTo) => {
+          setAuthMode(mode);
+          setAuthReturnTo(returnTo || null);
+          setShowAuthModal(true);
+        }}
+      />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -111,6 +97,9 @@ function Delivo() {
             setAuthMode(null);
           }}
           onSwitch={setAuthMode}
+          onSuccess={() => {
+            setShowAuthModal(false);
+          }}
         />
       )}
 
@@ -120,7 +109,6 @@ function Delivo() {
             const { data } = await supabase.auth.getSession();
             setSession(data.session);
             setUser(data.session?.user ?? null);
-            navigate("/restaurants", { replace: true });
           }}
         />
       )}

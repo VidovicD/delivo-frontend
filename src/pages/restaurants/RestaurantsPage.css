@@ -29,18 +29,35 @@
   gap: 20px;
 }
 
+/* OSNOVNA KARTICA – BEZ POINTERA */
 .restaurant-card {
   background: var(--brand-neutral);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-  cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.restaurant-card:hover {
+/* KARTICA JE INTERAKTIVNA SAMO KAD NIJE DISABLED */
+.restaurant-card:not(.restaurant-card--disabled) {
+  cursor: pointer;
+}
+
+.restaurant-card:not(.restaurant-card--disabled):hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* ZAKLJUČANA KARTICA */
+.restaurant-card--disabled {
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.45;
+}
+
+.restaurant-card--disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .restaurant-card__name {
@@ -72,20 +89,15 @@
   }
 }
 
-
 .restaurants__logout {
   margin-top: 24px;
-
   background: none;
   border: none;
-
   font-size: 13px;
   font-weight: 500;
   color: var(--brand-accent);
-
   cursor: pointer;
   opacity: 0.85;
-
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -93,4 +105,53 @@
 
 .restaurants__logout:hover {
   opacity: 1;
+}
+
+.restaurants__change-address {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brand-accent);
+  cursor: pointer;
+  opacity: 0.8;
+  margin-top: 6px;
+}
+
+.restaurants__change-address:hover {
+  opacity: 1;
+}
+
+.restaurants__address-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 14px 18px;
+  margin-top: 8px;
+  border-radius: 999px;
+  border: 1px solid #00000020;
+  background: var(--brand-neutral);
+  color: var(--brand-accent);
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.restaurants__address-input::placeholder {
+  color: var(--brand-accent);
+  opacity: 0.4;
+}
+
+.restaurants__address-input:focus {
+  border-color: var(--brand-accent);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
+}
+
+@media (max-width: 480px) {
+  .restaurants__address-input {
+    width: 100%;
+    max-width: none;
+    font-size: 16px;
+    padding: 14px 16px;
+  }
 }

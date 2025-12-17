@@ -1,9 +1,11 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../../supabaseClient";
 import "./Header.css";
 
 function Header({ user, onAuthOpen }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -24,17 +26,36 @@ function Header({ user, onAuthOpen }) {
     }
   }, [location, onAuthOpen]);
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/", { replace: true });
+  };
+
   return (
     <header className="header">
       <div />
 
       <div className="header__right">
-        {!user && (
+        {!user ? (
           <button
             className="header__btn"
-            onClick={() => onAuthOpen("login")}
+            onClick={() =>
+              onAuthOpen(
+                "login",
+                location.pathname === "/"
+                  ? "/restaurants"
+                  : location.pathname + location.search
+              )
+            }
           >
             Prijava / Registracija
+          </button>
+        ) : (
+          <button
+            className="header__btn header__btn--logout"
+            onClick={handleLogout}
+          >
+            Odjavi se
           </button>
         )}
       </div>

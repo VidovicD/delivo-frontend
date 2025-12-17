@@ -66,7 +66,7 @@ const SuccessCheck = () => (
 const isValidEmail = (email) =>
 /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-function AuthModal({ mode, onClose, onSwitch }) {
+function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
   const modalRef = useRef(null);
   const nameRef = useRef(null);
   const phoneRef = useRef(null);
@@ -289,6 +289,11 @@ function AuthModal({ mode, onClose, onSwitch }) {
 
       setSuccessType("auth");
       setStep("success");
+
+      setTimeout(() => {
+        onSuccess?.();
+      }, 600);
+
       return;
     }
 
