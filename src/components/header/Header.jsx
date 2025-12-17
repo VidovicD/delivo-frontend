@@ -3,28 +3,31 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import "./Header.css";
 
-function Header({ user, onAuthOpen }) {
+function Header({ session, onAuthOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isAuthenticated = !!session;
+
   useEffect(() => {
+    if (isAuthenticated) return;
+
     const params = new URLSearchParams(location.search);
+    if (params.get("login") !== "1") return;
 
-    if (params.get("login") === "1") {
-      const returnTo = params.get("returnTo");
+    const returnTo = params.get("returnTo") || "/restaurants";
 
-      onAuthOpen("login", returnTo);
+    onAuthOpen("login", returnTo);
 
-      params.delete("login");
-      params.delete("returnTo");
+    params.delete("login");
+    params.delete("returnTo");
 
-      const newSearch = params.toString();
-      const newUrl =
-        location.pathname + (newSearch ? `?${newSearch}` : "");
+    const newSearch = params.toString();
+    const newUrl =
+      location.pathname + (newSearch ? `?${newSearch}` : "");
 
-      window.history.replaceState({}, "", newUrl);
-    }
-  }, [location, onAuthOpen]);
+    window.history.replaceState({}, "", newUrl);
+  }, [location, isAuthenticated, onAuthOpen]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -36,7 +39,7 @@ function Header({ user, onAuthOpen }) {
       <div />
 
       <div className="header__right">
-        {!user ? (
+        {!isAuthenticated ? (
           <button
             className="header__btn"
             onClick={() =>

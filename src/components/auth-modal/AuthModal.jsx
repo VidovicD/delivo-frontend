@@ -359,12 +359,20 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
       setLoading(false);
 
       if (error) {
-        console.log("SIGNUP ERROR:", error); // ⬅️ OVO
         setFormError(getAuthErrorMessage(error));
         return;
       }
 
-      setSuccessType("verify_or_login");
+      const { data: loginData } = await supabase.auth.signInWithPassword({
+        email: registerEmail,
+        password: registerPassword,
+      });
+
+      if (loginData?.session) {
+        onSuccess?.();
+      }
+
+      setSuccessType("auth");
       setStep("success");
     } catch (err) {
       setLoading(false);

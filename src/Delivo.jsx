@@ -8,7 +8,6 @@ import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import AuthModal from "./components/auth-modal/AuthModal";
 import AddPasswordModal from "./components/add-password/AddPasswordModal";
-import RequireAuth from "./components/require-auth/RequireAuth";
 
 import HomePage from "./pages/home/HomePage";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
@@ -36,26 +35,13 @@ function Delivo() {
       if (event === "INITIAL_SESSION") return;
 
       if (event === "SIGNED_IN") {
-        const needsPassword =
-          session?.user &&
-          session.user.app_metadata?.provider === "google" &&
-          session.user.user_metadata?.password_set !== true;
-
-        if (needsPassword) return;
-
-        const current = window.location.pathname + window.location.search;
-
         const target =
           authReturnTo && authReturnTo !== "/"
             ? authReturnTo
             : "/restaurants";
 
-        if (current !== target) {
-          navigate(target, { replace: true });
-        }
-
+        navigate(target, { replace: true });
         setAuthReturnTo(null);
-        return;
       }
 
       if (event === "SIGNED_OUT") {
@@ -74,7 +60,7 @@ function Delivo() {
   return (
     <>
       <Header
-        user={user}
+        session={session}
         onAuthOpen={(mode, returnTo) => {
           setAuthMode(mode);
           setAuthReturnTo(returnTo || null);
@@ -84,7 +70,10 @@ function Delivo() {
 
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/restaurants" element={<RestaurantsPage />} />
+        <Route
+          path="/restaurants"
+          element={<RestaurantsPage session={session} />}
+        />
       </Routes>
 
       <Footer />
@@ -97,7 +86,10 @@ function Delivo() {
             setAuthMode(null);
           }}
           onSwitch={setAuthMode}
-          onSuccess={() => {
+          onSuccess={async () => {
+            const { data } = await supabase.auth.getSession();
+            setSession(data.session);
+            setUser(data.session?.user ?? null);
             setShowAuthModal(false);
           }}
         />

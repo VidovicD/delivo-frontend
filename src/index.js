@@ -6,9 +6,7 @@ import Delivo from "./Delivo";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Delivo />
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <Delivo />
+  </BrowserRouter>
 );

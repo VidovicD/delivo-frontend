@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
-import { supabase } from "../../supabaseClient";
 import "./RestaurantsPage.css";
 
 function useQuery() {
@@ -24,7 +23,7 @@ function getDistanceKm(lat1, lng1, lat2, lng2) {
   return R * c;
 }
 
-function RestaurantsPage() {
+function RestaurantsPage({ session }) {
   const query = useQuery();
   const navigate = useNavigate();
 
@@ -35,17 +34,14 @@ function RestaurantsPage() {
   const hasAddress =
     !!address && !Number.isNaN(lat) && !Number.isNaN(lng);
 
+  const canInteract = !!session && hasAddress;
+  const isDisabled = !canInteract;
+
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const [showAddressInput, setShowAddressInput] = useState(false);
   const [autocomplete, setAutocomplete] = useState(null);
-
-  const [hasSession, setHasSession] = useState(false);
-
-  const canInteract = hasSession && hasAddress;
-  const isDisabled = !canInteract;
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
@@ -53,50 +49,39 @@ function RestaurantsPage() {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setHasSession(!!data.session);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setHasSession(!!session);
-      }
-    );
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+    if (session && !hasAddress) {
+      setShowAddressInput(true);
+    }
+  }, [session, hasAddress]);
 
   useEffect(() => {
     const fetchRestaurants = async () => {
       setLoading(true);
-      setError(null);
 
-      const { data, error } = await supabase
-        .from("restaurants")
-        .select("id, name, address, lat, lng");
+      const { data } = await fetch(
+        `${process.env.REACT_APP_SUPABASE_URL}/rest/v1/restaurants?select=id,name,address,lat,lng`,
+        {
+          headers: {
+            apikey: process.env.REACT_APP_SUPABASE_ANON_KEY,
+          },
+        }
+      ).then((r) => r.json().then((d) => ({ data: d })));
 
-      if (error) {
-        setError("Greška pri učitavanju restorana.");
-        setRestaurants([]);
-      } else {
-        setRestaurants(
-          (data || []).map((r) => ({
-            ...r,
-            distanceKm:
-              r.lat != null && r.lng != null
-                ? getDistanceKm(lat, lng, r.lat, r.lng)
-                : null,
-          }))
-        );
-      }
+      setRestaurants(
+        (data || []).map((r) => ({
+          ...r,
+          distanceKm:
+            r.lat != null && r.lng != null
+              ? getDistanceKm(lat, lng, r.lat, r.lng)
+              : null,
+        }))
+      );
 
       setLoading(false);
     };
 
-    fetchRestaurants();
-  }, [lat, lng]);
+    if (hasAddress) fetchRestaurants();
+  }, [hasAddress, lat, lng]);
 
   const handlePlaceChanged = () => {
     if (!autocomplete) return;
@@ -174,13 +159,7 @@ function RestaurantsPage() {
         </p>
       )}
 
-      {error && (
-        <p style={{ textAlign: "center", marginTop: 40, color: "red" }}>
-          {error}
-        </p>
-      )}
-
-      {!loading && !error && (
+      {!loading && (
         <div className="restaurants__grid">
           {restaurants.map((r) => (
             <div
