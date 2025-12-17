@@ -1,27 +1,28 @@
 import { useMemo, useState, useEffect } from "react";
 import "./FloatingIcons.css";
 
-const ICON_COUNT = 50;
-const OPACITY_RANGE = [0.03, 0.06];
-const SIZE_RANGE = [35, 65];
+const DESKTOP_ICON_COUNT = 28;
+const MOBILE_ICON_COUNT = 10;
 
-const MOBILE_SCALE = 0.6;
+const OPACITY_RANGE = [0.02, 0.045];
+const SIZE_RANGE = [35, 60];
+
+const MOBILE_SCALE = 0.8;
 const MOBILE_BREAKPOINT = 768;
 
-function generateIcons(count) {
+function generateIcons(count, minDistance) {
   const icons = [];
-  const minDistance = 5;
   let attempts = 0;
 
-  while (icons.length < count && attempts < count * 40) {
+  while (icons.length < count && attempts < count * 80) {
     const top = Math.random() * 100;
     const left = Math.random() * 100;
 
-    const isFarEnough = icons.every(
-      (i) =>
-        Math.abs(i.top - top) > minDistance &&
-        Math.abs(i.left - left) > minDistance
-    );
+    const isFarEnough = icons.every((i) => {
+      const dx = i.left - left;
+      const dy = i.top - top;
+      return Math.hypot(dx, dy) > minDistance;
+    });
 
     if (isFarEnough) {
       icons.push({
@@ -34,7 +35,7 @@ function generateIcons(count) {
           OPACITY_RANGE[0] +
           Math.random() *
             (OPACITY_RANGE[1] - OPACITY_RANGE[0]),
-        duration: 6 + Math.random() * 6,
+        duration: 8 + Math.random() * 6,
       });
     }
 
@@ -57,10 +58,12 @@ function FloatingIcons({ icons = [] }) {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const floatingIcons = useMemo(
-    () => generateIcons(ICON_COUNT),
-    []
-  );
+  const floatingIcons = useMemo(() => {
+    return generateIcons(
+      isMobile ? MOBILE_ICON_COUNT : DESKTOP_ICON_COUNT,
+      isMobile ? 18 : 14
+    );
+  }, [isMobile]);
 
   return (
     <div className="floating-icons">

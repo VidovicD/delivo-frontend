@@ -53,8 +53,8 @@ function HeroSection() {
           <img src={logo} alt="Delivo logo" className="hero__logo" />
 
           <div className="hero__tagline">
-            <h1>O čemu danas razmišljaš?</h1>
-            <p>Mi smo već krenuli.</p>
+            <h1>Bilo kad. Bilo gde. Bilo šta.</h1>
+            <p>Gradska dostava - Novi Sad</p>
           </div>
 
           <div className="hero__search">

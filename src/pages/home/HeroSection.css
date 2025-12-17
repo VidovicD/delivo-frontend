@@ -37,6 +37,7 @@
   margin: 0;
   padding-top: 5px;
   line-height: 1.05;
+  color: var(--brand-accent);
 }
 
 .hero__tagline p {
@@ -45,6 +46,7 @@
   font-size: 20px;
   margin: 0;
   padding-bottom: 15px;
+  color: var(--brand-accent);
 }
 
 .hero__search {
