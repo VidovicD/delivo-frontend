@@ -1,0 +1,80 @@
+import React from "react";
+import { isValidEmail } from "./authUtils";
+
+function ForgotPasswordForm({
+  email,
+  setEmail,
+  emailRef,
+  loading,
+  loginTouched,
+  setLoginTouched,
+  formError,
+  setFormError,
+  onSubmit,
+  onBack,
+}) {
+  return (
+    <>
+      <div className="auth-hero auth-hero--forgot">
+        <h2>Zaboravljena lozinka</h2>
+      </div>
+
+      <div className="auth-form">
+        <div className="form-field">
+          <label>Email adresa</label>
+          <input
+            ref={emailRef}
+            type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setFormError("");
+              setLoginTouched(false);
+            }}
+            className={
+              loginTouched && (!email || !isValidEmail(email))
+                ? "error"
+                : ""
+            }
+          />
+        </div>
+
+        <button
+          className="auth-submit"
+          onClick={async () => {
+            setLoginTouched(true);
+            if (!email || !isValidEmail(email)) return;
+            await onSubmit();
+          }}
+          disabled={loading}
+        >
+          Pošalji link za reset lozinke
+        </button>
+
+        <div className="auth-forgot-footer">
+          {loginTouched && !email && (
+            <div className="error-text">
+              Email adresa je obavezna.
+            </div>
+          )}
+
+          {loginTouched && email && !isValidEmail(email) && (
+            <div className="error-text">
+              Unesite ispravnu email adresu.
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="auth-link"
+            onClick={onBack}
+          >
+            Nazad
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default ForgotPasswordForm;

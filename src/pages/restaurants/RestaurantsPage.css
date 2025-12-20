@@ -29,35 +29,18 @@
   gap: 20px;
 }
 
-/* OSNOVNA KARTICA – BEZ POINTERA */
 .restaurant-card {
   background: var(--brand-neutral);
   border-radius: 16px;
   padding: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: not-allowed;
 }
 
-/* KARTICA JE INTERAKTIVNA SAMO KAD NIJE DISABLED */
-.restaurant-card:not(.restaurant-card--disabled) {
-  cursor: pointer;
-}
-
-.restaurant-card:not(.restaurant-card--disabled):hover {
+.restaurant-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
-
-/* ZAKLJUČANA KARTICA */
-.restaurant-card--disabled {
-  pointer-events: none;
-  cursor: default;
-  opacity: 0.45;
-}
-
-.restaurant-card--disabled:hover {
-  transform: none;
-  box-shadow: none;
 }
 
 .restaurant-card__name {
@@ -154,4 +137,110 @@
     font-size: 16px;
     padding: 14px 16px;
   }
+}
+
+.address-picker {
+  position: relative;
+  max-width: 520px;
+  margin-top: 8px;
+}
+
+.address-picker__trigger {
+  width: 100%;
+  background: var(--brand-neutral);
+  border: 1px solid #00000020;
+  border-radius: 999px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.address-picker__label {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.address-picker__value {
+  flex: 1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.address-picker__chevron {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.address-picker__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--brand-neutral);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 30;
+}
+
+.address-picker__option {
+  flex: 1;
+  width: auto;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.address-picker__option:hover {
+  background: #00000008;
+}
+
+.address-picker__option strong {
+  display: block;
+  font-size: 14px;
+}
+
+.address-picker__option span {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.address-picker__new {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: #00000005;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.address-picker__new:hover {
+  background: #00000010;
+}
+
+.address-picker__row {
+  display: flex;
+  align-items: center;
+}
+
+.address-picker__delete {
+  border: none;
+  background: none;
+  padding: 0 14px;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+    position: relative;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.address-picker__delete:hover {
+  color: #e74c3c;
 }

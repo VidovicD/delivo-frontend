@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 
@@ -12,64 +12,120 @@ import AddPasswordModal from "./components/add-password/AddPasswordModal";
 import HomePage from "./pages/home/HomePage";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 
+import RequireAuth from "./components/require-auth/RequireAuth";
+
+import {
+  syncGuestAddressesToUser,
+  loadUserAddresses,
+  clearGuestAddresses,
+} from "./utils/deliveryAddress";
+
 function Delivo() {
   const navigate = useNavigate();
+  const redirectLock = useRef(false);
 
   const [session, setSession] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
-  const [authReturnTo, setAuthReturnTo] = useState(null);
+
+  const [addressVersion, setAddressVersion] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      setAuthReady(true);
     });
 
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setAuthReady(true);
+        setShowAuthModal(false);
 
-      if (event === "INITIAL_SESSION") return;
+        if (!session?.user) {
+          redirectLock.current = false;
+          return;
+        }
 
-      if (event === "SIGNED_IN") {
-        const target =
-          authReturnTo && authReturnTo !== "/"
-            ? authReturnTo
-            : "/restaurants";
+        if (redirectLock.current) return;
+        redirectLock.current = true;
 
-        navigate(target, { replace: true });
-        setAuthReturnTo(null);
+        const userId = session.user.id;
+
+        if (event === "SIGNED_UP") {
+          await syncGuestAddressesToUser(supabase, userId);
+          const list = await loadUserAddresses(supabase, userId);
+
+          if (list?.length) {
+            const a = list[0];
+            navigate(
+              `/restaurants?address=${encodeURIComponent(a.address)}&lat=${a.lat}&lng=${a.lng}`,
+              { replace: true }
+            );
+          }
+
+          setAddressVersion((v) => v + 1);
+          return;
+        }
+
+        if (event === "SIGNED_IN") {
+          clearGuestAddresses();
+          const list = await loadUserAddresses(supabase, userId);
+
+          if (list?.length) {
+            const a = list[0];
+            navigate(
+              `/restaurants?address=${encodeURIComponent(a.address)}&lat=${a.lat}&lng=${a.lng}`,
+              { replace: true }
+            );
+          }
+
+          setAddressVersion((v) => v + 1);
+          return;
+        }
       }
+    );
 
-      if (event === "SIGNED_OUT") {
-        navigate("/", { replace: true });
-      }
-    });
-
-    return () => data.subscription.unsubscribe();
-  }, [authReturnTo, navigate]);
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const needsPassword =
     session?.user &&
-    session.user.app_metadata?.provider === "google" &&
-    session.user.user_metadata?.password_set !== true;
+    session.user.identities?.some(
+      (i) => i.provider === "google"
+    ) &&
+    !session.user.user_metadata?.password_set;
 
   return (
     <>
       <Header
         session={session}
-        onAuthOpen={(mode, returnTo) => {
+        authReady={authReady}
+        onAuthOpen={(mode) => {
           setAuthMode(mode);
-          setAuthReturnTo(returnTo || null);
           setShowAuthModal(true);
         }}
       />
 
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/"
+          element={<HomePage session={session} />}
+        />
+
         <Route
           path="/restaurants"
-          element={<RestaurantsPage session={session} />}
+          element={
+            <RestaurantsPage
+              key={addressVersion}
+              session={session}
+              addressVersion={addressVersion}
+            />
+          }
         />
       </Routes>
 
@@ -83,11 +139,6 @@ function Delivo() {
             setAuthMode(null);
           }}
           onSwitch={setAuthMode}
-          onSuccess={async () => {
-            const { data } = await supabase.auth.getSession();
-            setSession(data.session);
-            setShowAuthModal(false);
-          }}
         />
       )}
 

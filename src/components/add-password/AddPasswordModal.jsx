@@ -1,21 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./AddPasswordModal.css";
 import { supabase } from "../../supabaseClient";
-
-const EyeOpen = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M1 12C3.5 7 7.5 4 12 4s8.5 3 11 8c-2.5 5-6.5 8-11 8s-8.5-3-11-8Z" stroke="currentColor" strokeWidth="2" />
-    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-
-const EyeClosed = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <path d="M1 12C3.5 7 7.5 4 12 4s8.5 3 11 8c-2.5 5-6.5 8-11 8s-8.5-3-11-8Z" stroke="currentColor" strokeWidth="2" />
-    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-    <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
 
 function AddPasswordModal({ onSuccess }) {
   const [password, setPassword] = useState("");
@@ -46,21 +31,20 @@ function AddPasswordModal({ onSuccess }) {
 
     setLoading(true);
 
-    const { error: updateError } = await supabase.auth.updateUser({
-      password,
-      data: { password_set: true },
-    });
+    const { error: updateError } =
+      await supabase.auth.updateUser({
+        password,
+        data: { password_set: true },
+      });
 
     setLoading(false);
 
     if (updateError) {
-      setError("Došlo je do greške prilikom čuvanja lozinke.");
+      setError("Došlo je do greške.");
       return;
     }
 
-    if (typeof onSuccess === "function") {
-      onSuccess();
-    }
+    onSuccess();
   };
 
   return (
@@ -71,7 +55,7 @@ function AddPasswordModal({ onSuccess }) {
         <p>
           Uspešno ste se prijavili putem Google naloga.
           <br />
-          Potrebno je da sada postavite lozinku.
+          Potrebno je da postavite lozinku.
         </p>
 
         <div className="password-field">
@@ -87,9 +71,11 @@ function AddPasswordModal({ onSuccess }) {
           <button
             type="button"
             className="toggle-password"
-            onClick={() => setShowPassword((p) => !p)}
+            onClick={() =>
+              setShowPassword((p) => !p)
+            }
           >
-            {showPassword ? <EyeOpen /> : <EyeClosed />}
+            👁
           </button>
         </div>
 
@@ -105,21 +91,16 @@ function AddPasswordModal({ onSuccess }) {
           />
         </div>
 
-        {error && <div className="ap-error">{error}</div>}
-
-        <button className="ap-btn" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Čuvanje..." : "Sačuvaj lozinku"}
-        </button>
+        {error && (
+          <div className="ap-error">{error}</div>
+        )}
 
         <button
-          type="button"
-          className="ap-link"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            window.location.href = "/";
-          }}
+          className="ap-btn"
+          onClick={handleSubmit}
+          disabled={loading}
         >
-          Odjavite se
+          {loading ? "Čuvanje..." : "Sačuvaj"}
         </button>
       </div>
     </div>

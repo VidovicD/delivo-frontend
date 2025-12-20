@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
+import { saveAddress } from "../../utils/deliveryAddress";
 
 import "./HeroSection.css";
 
@@ -42,10 +43,12 @@ function HeroSection() {
 
     const lat = location.lat();
     const lng = location.lng();
-
-    localStorage.setItem("delivery_address", formatted);
-    localStorage.setItem("delivery_lat", lat.toString());
-    localStorage.setItem("delivery_lng", lng.toString());
+    
+    saveAddress({
+      address: formatted,
+      lat,
+      lng,
+    });
 
     navigate(
       `/restaurants?address=${encodeURIComponent(formatted)}&lat=${lat}&lng=${lng}`,

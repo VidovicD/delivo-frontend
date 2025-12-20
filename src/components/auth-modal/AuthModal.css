@@ -270,41 +270,34 @@ margin: 30px 0 20px 0px;
   padding: 0 22px;
 }
 
-.auth-social button {
+.auth-social-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
 
+}
+
+.auth-social-btn {
   border-radius: 999px;
   font-weight: 600;
-
-  cursor: pointer;
-
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
 }
 
-.auth-social .google {
+.auth-social-btn.google {
   background: var(--brand-neutral2);
   color: var(--brand-accent);
   border: 1px solid #00000020;
-  gap: 8px;
+  cursor: pointer;
 }
 
-.auth-social .google-hig__icon {
-  width: 18px;
-  height: 18px;
-}
-
-.auth-social .apple-hig {
+.auth-social-btn.apple {
   background: #000000;
   color: #ffffff;
-
   border: none;
-  gap: 8px;
-}
-
-.auth-social .apple-hig__icon {
-  width: 18px;
-  height: 18px;
 }
 
 .auth-social button:disabled {
@@ -433,7 +426,7 @@ margin: 30px 0 20px 0px;
   margin-bottom: 16px;
 }
 
-.auth-success-circle {
+.auth-success-check__circle {
   stroke: #ffb60f;
   stroke-width: 3;
   stroke-dasharray: 157;
@@ -441,7 +434,7 @@ margin: 30px 0 20px 0px;
   animation: successCircle 0.7s ease forwards;
 }
 
-.auth-success-mark {
+.auth-success-check__check {
   stroke: #142127;
   stroke-width: 4;
   stroke-linecap: round;
