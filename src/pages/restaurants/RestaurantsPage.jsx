@@ -110,7 +110,7 @@ function RestaurantsPage({ session, addressVersion }) {
         lng: lngParam,
       });
     }
-  }, [location.search]);
+  }, [addressParam, latParam, lngParam]);
 
   useEffect(() => {
     if (current.lat == null || current.lng == null) return;
