@@ -160,6 +160,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     if (mode === "login") setLoginTouched(true);
     else setRegisterTouched(true);
 
+    /* ---------------- LOGIN ---------------- */
     if (mode === "login") {
       if (!loginEmail) {
         setFormError("Email je obavezan.");
@@ -203,6 +204,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
+    /* ---------------- REGISTER ---------------- */
     if (
       !registerName ||
       !registerPhone ||
@@ -247,7 +249,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         return;
       }
 
-      const { data: signUpData } = await registerWithPassword(
+      const { data: signUpData, error } = await registerWithPassword(
         registerEmail,
         registerPassword,
         {
@@ -256,6 +258,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         }
       );
 
+      if (error) throw error;
+
       if (signUpData?.user?.id) {
         await syncGuestAddressesToUser(supabase, signUpData.user.id);
       }
@@ -263,9 +267,9 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setLoading(false);
       setSuccessType("verify_or_login");
       setStep("success");
-    } catch {
+    } catch (e) {
       setLoading(false);
-      setFormError("Došlo je do greške. Pokušajte ponovo.");
+      setFormError(getAuthErrorMessage(e));
     }
   };
 
