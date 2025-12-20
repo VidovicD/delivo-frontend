@@ -12,8 +12,6 @@ import AddPasswordModal from "./components/add-password/AddPasswordModal";
 import HomePage from "./pages/home/HomePage";
 import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
 
-import RequireAuth from "./components/require-auth/RequireAuth";
-
 import {
   syncGuestAddressesToUser,
   loadUserAddresses,

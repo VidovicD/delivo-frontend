@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabaseClient";
 import "./Header.css";
 
 function Header({ session, authReady, onAuthOpen }) {
-  const navigate = useNavigate();
   const isAuthenticated = !!session?.user;
   const [open, setOpen] = useState(false);
 

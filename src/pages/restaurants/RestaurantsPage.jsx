@@ -6,8 +6,6 @@ import { supabase } from "../../supabaseClient";
 import {
   getSavedAddresses,
   saveAddress,
-  saveUserAddress,
-  loadUserAddresses,
   setCurrentAddress,
   deleteAddress,
   touchUserAddress,
@@ -91,7 +89,7 @@ function RestaurantsPage({ session, addressVersion }) {
       `/restaurants?address=${encodeURIComponent(last.address)}&lat=${last.lat}&lng=${last.lng}`,
       { replace: true }
     );
-  }, []);
+  }, [addressParam, latParam, lngParam, navigate]);
 
   useEffect(() => {
     const stored = getSavedAddresses();
@@ -120,14 +118,9 @@ function RestaurantsPage({ session, addressVersion }) {
     const load = async () => {
       setLoading(true);
 
-      const { data } = await fetch(
-        `${process.env.REACT_APP_SUPABASE_URL}/rest/v1/restaurants?select=id,name,address,lat,lng`,
-        {
-          headers: {
-            apikey: process.env.REACT_APP_SUPABASE_ANON_KEY,
-          },
-        }
-      ).then((r) => r.json().then((d) => ({ data: d })));
+      const { data } = await supabase
+        .from("restaurants")
+        .select("id, name, address, lat, lng");
 
       setRestaurants(
         (data || []).map((r) => ({
@@ -153,13 +146,11 @@ function RestaurantsPage({ session, addressVersion }) {
       !addressParam
     ) {
       navigate(
-        `/restaurants?address=${encodeURIComponent(
-          current.address
-        )}&lat=${current.lat}&lng=${current.lng}`,
+        `/restaurants?address=${encodeURIComponent(current.address)}&lat=${current.lat}&lng=${current.lng}`,
         { replace: true }
       );
     }
-  }, [current, addressParam, navigate]);
+  }, [current.address, current.lat, current.lng, addressParam, navigate]);
 
   const debouncedSaveUserAddress = (
     address,
