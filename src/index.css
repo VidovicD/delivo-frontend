@@ -10,3 +10,13 @@ body {
   overflow-x: hidden;
   font-family: "Nunito", sans-serif;
 }
+
+.app-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1;
+}

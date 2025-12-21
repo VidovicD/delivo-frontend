@@ -1,46 +1,118 @@
-.add-address-modal__backdrop {
+/* ================= OVERLAY ================= */
+
+.aa-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.6);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+
+  z-index: 1010;
 }
 
-.add-address-modal {
-  background: var(--brand-neutral);
-  border-radius: 20px;
-  padding: 24px;
+/* ================= MODAL ================= */
+
+.aa-modal {
+  background: var(--brand-primary);
+
   width: 100%;
-  max-width: 420px;
+  height: 100%;
+
+  padding: 24px;
+  border-radius: 20px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
-.add-address-modal__title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 16px;
+/* ================= TYPO ================= */
+
+.aa-modal h2 {
+  margin-bottom: 12px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand-accent);
 }
 
-.add-address-modal__input {
+.aa-modal p {
+  margin-bottom: 22px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--brand-accent);
+  opacity: 0.8;
+}
+
+/* ================= INPUT ================= */
+
+.aa-input {
   width: 100%;
-  padding: 14px 16px;
+  max-width: 360px;
+  padding: 14px 20px;
+
   border-radius: 999px;
+  background: var(--brand-neutral);
   border: 1px solid #00000020;
+
   font-size: 15px;
+  color: var(--brand-accent);
   outline: none;
 }
 
-.add-address-modal__close {
-  margin-top: 16px;
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  opacity: 0.7;
+.aa-input:focus {
+  border-color: var(--brand-accent);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
 }
 
-.add-address-modal__close:hover {
+/* ================= BUTTON ================= */
+
+.aa-link {
+  margin-top: 18px;
+  background: none;
+  border: none;
+
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brand-accent);
+
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.aa-link:hover {
   opacity: 1;
+}
+
+/* ================= MOBILE (FAKE FULLSCREEN) ================= */
+
+@media (max-width: 480px) {
+  .aa-modal {
+    width: 100%;
+    max-width: none;
+    height: calc(100vh - 40px);
+
+    border-radius: 0;
+    padding: 20px;
+  }
+
+  .aa-modal h2 {
+    font-size: 28px;
+  }
+
+  .aa-input {
+    font-size: 16px;
+  }
+}
+
+/* ================= GOOGLE AUTOCOMPLETE FIX ================= */
+
+.pac-container {
+  z-index: 2000 !important;
 }

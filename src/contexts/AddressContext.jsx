@@ -38,8 +38,8 @@ export function AddressProvider({
   children,
 }) {
   const [savedAddresses, setSavedAddresses] = useState([]);
-  const [ready, setReady] = useState(true);
-  const [addressesReady, setAddressesReady] = useState(true);
+  const [ready, setReady] = useState(false);
+  const [addressesReady, setAddressesReady] = useState(false);
 
   const requestSeq = useRef(0);
 
@@ -50,6 +50,11 @@ export function AddressProvider({
 
   const refresh = useCallback(async () => {
     const seq = ++requestSeq.current;
+
+    if (seq === requestSeq.current) {
+      setReady(false);
+      setAddressesReady(false);
+    }
 
     try {
       if (!authReady) {
@@ -101,11 +106,7 @@ export function AddressProvider({
         const found = savedAddresses.find((a) => a.id === id);
         if (!found) return;
 
-        await touchUserAddress(
-          supabase,
-          session.user.id,
-          found.address
-        );
+        await touchUserAddress(supabase, session.user.id, found.address);
 
         const list = await withTimeout(
           loadUserAddresses(supabase, session.user.id),
@@ -133,11 +134,7 @@ export function AddressProvider({
           lng,
         });
 
-        await touchUserAddress(
-          supabase,
-          session.user.id,
-          address
-        );
+        await touchUserAddress(supabase, session.user.id, address);
 
         const list = await withTimeout(
           loadUserAddresses(supabase, session.user.id),

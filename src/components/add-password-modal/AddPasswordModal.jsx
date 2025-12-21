@@ -3,17 +3,21 @@ import "./AddPasswordModal.css";
 import { supabase } from "../../supabaseClient";
 import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
 
-function AddPasswordModal({ onSuccess }) {
+function AddPasswordModal({ onSuccess, onOpen, onClose }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // 🔒 SIGNALIZUJ DA JE PASSWORD FLOW AKTIVAN
   useEffect(() => {
+    onOpen?.();
     document.body.style.overflow = "hidden";
+
     return () => {
       document.body.style.overflow = "";
+      onClose?.();
     };
   }, []);
 
@@ -32,11 +36,10 @@ function AddPasswordModal({ onSuccess }) {
 
     setLoading(true);
 
-    const { error: updateError } =
-      await supabase.auth.updateUser({
-        password,
-        data: { password_set: true },
-      });
+    const { error: updateError } = await supabase.auth.updateUser({
+      password,
+      data: { password_set: true },
+    });
 
     setLoading(false);
 

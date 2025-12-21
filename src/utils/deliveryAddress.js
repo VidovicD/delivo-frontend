@@ -21,11 +21,6 @@ function setActive(address) {
 }
 
 function normalizeGuestAddresses(list) {
-  // 🚫 ako je user ulogovan — NIKAD ne diraj active address
-  if (localStorage.getItem("sb-access-token")) {
-    return list;
-  }
-
   if (!list.length) {
     setActive(null);
     return list;
@@ -113,7 +108,7 @@ export function clearGuestAddresses() {
 export function getActiveAddress(session, addresses) {
   if (!Array.isArray(addresses) || !addresses.length) return null;
 
-  // USER → poslednje korišćena
+  // USER → poslednje korišćena (po lastUsed)
   if (session?.user) {
     return (
       addresses

@@ -4,9 +4,11 @@ import { useAddress } from "../../contexts/AddressContext";
 
 import "./AddAddressModal.css";
 
-function AddAddressModal({ onClose }) {
+function AddAddressModal({ onClose, force = false }) {
   const autocompleteRef = useRef(null);
-  const { addAddressFromPlace } = useAddress();
+  const { addAddressFromPlace, savedAddresses } = useAddress();
+
+  const canClose = !force && savedAddresses.length > 0;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -32,11 +34,11 @@ function AddAddressModal({ onClose }) {
   };
 
   return (
-    <div className="add-address-modal__backdrop">
-      <div className="add-address-modal">
-        <h3 className="add-address-modal__title">
-          Dodaj novu adresu
-        </h3>
+    <div className="aa-overlay">
+      <div className="aa-modal">
+        <h2>Dodavanje adrese</h2>
+
+        <p>Unesite adresu za dostavu.</p>
 
         <Autocomplete
           onLoad={(a) => (autocompleteRef.current = a)}
@@ -47,19 +49,21 @@ function AddAddressModal({ onClose }) {
           }}
         >
           <input
-            className="add-address-modal__input"
+            className="aa-input"
             placeholder="Unesite adresu…"
             autoFocus
           />
         </Autocomplete>
 
-        <button
-          className="add-address-modal__close"
-          type="button"
-          onClick={onClose}
-        >
-          Otkaži
-        </button>
+        {canClose && (
+          <button
+            type="button"
+            className="aa-link"
+            onClick={onClose}
+          >
+            Otkaži
+          </button>
+        )}
       </div>
     </div>
   );

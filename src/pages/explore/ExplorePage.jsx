@@ -3,7 +3,6 @@ import { supabase } from "../../supabaseClient";
 import { useAddress } from "../../contexts/AddressContext";
 
 import "./ExplorePage.css";
-import AddAddressModal from "../../components/add-address-modal/AddAddressModal";
 
 const MAX_ADDRESSES = 3;
 
@@ -24,7 +23,6 @@ function getDistanceKm(lat1, lng1, lat2, lng2) {
 
 function ExplorePage() {
   const [showPicker, setShowPicker] = useState(false);
-  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
 
   const {
     savedAddresses,
@@ -128,16 +126,16 @@ function ExplorePage() {
                 ))}
 
                 {savedAddresses.length < MAX_ADDRESSES && (
-                  <button
-                    className="address-picker__new"
-                    type="button"
-                    onClick={() => {
-                      setShowPicker(false);
-                      setShowAddAddressModal(true);
-                    }}
-                  >
-                    + Nova adresa
-                  </button>
+                <button
+                  className="address-picker__new"
+                  type="button"
+                  onClick={() => {
+                    setShowPicker(false);
+                    window.dispatchEvent(new CustomEvent("open-add-address"));
+                  }}
+                >
+                  + Nova adresa
+                </button>
                 )}
               </div>
             )}
@@ -149,7 +147,10 @@ function ExplorePage() {
             <button
               type="button"
               className="address-picker__new"
-              onClick={() => setShowAddAddressModal(true)}
+              onClick={() => {
+                // samo signal – modal dolazi iz RequireAddress
+                window.dispatchEvent(new CustomEvent("open-add-address"));
+              }}
             >
               + Dodaj adresu
             </button>
@@ -183,12 +184,6 @@ function ExplorePage() {
             </div>
           ))}
         </div>
-      )}
-
-      {showAddAddressModal && (
-        <AddAddressModal
-          onClose={() => setShowAddAddressModal(false)}
-        />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 footer {
   position: relative;
-  z-index: 1000;
+  z-index: 1;
 }
 
 .footer-bottom {
@@ -9,6 +9,7 @@ footer {
   font-size: 14px;
   font-weight: 400;
   height: 7vh;
+  min-height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
