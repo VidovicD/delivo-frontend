@@ -45,8 +45,8 @@ function HeroSection() {
           <img src={logo} alt="Delivo logo" className="hero__logo" />
 
           <div className="hero__tagline">
-            <h1>Bilo kad. Bilo gde. Bilo šta.</h1>
-            <p>Gradska dostava - Novi Sad</p>
+            <h1>Sve na jednom mestu.</h1>
+            <p>Dostava svega što vam je potrebno.</p>
           </div>
 
           <div className="hero__search">
@@ -67,6 +67,9 @@ function HeroSection() {
               />
             </Autocomplete>
           </div>
+          <p className="hero__availability">
+            Trenutno dostupno u Novom Sadu.
+          </p>
         </div>
       </section>
     </section>

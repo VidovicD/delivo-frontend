@@ -33,20 +33,29 @@
 
 .hero__tagline h1 {
   font-weight: 900;
-  font-size: 40px;
+  font-size: 48px;
   margin: 0;
-  padding-top: 5px;
-  line-height: 1.05;
+  padding-top: 15px;
+  line-height: 1.10;
   color: var(--brand-accent);
 }
 
 .hero__tagline p {
   font-style: italic;
   font-weight: 600;
-  font-size: 20px;
+  font-size: 26px;
   margin: 0;
-  padding-bottom: 15px;
+  padding-bottom: 25px;
   color: var(--brand-accent);
+}
+
+.hero__availability {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-accent);
+  opacity: 0.4;
+  text-align: center;
 }
 
 .hero__search {
@@ -100,19 +109,25 @@
 }
 
 @media (max-width: 480px) {
+  .hero {
+    min-height: 100vh;
+    padding-inline: 16px;
+  }
+
   .hero__logo {
     width: 110px;
     height: 110px;
   }
 
   .hero__tagline h1 {
-    font-size: 22px;
-    line-height: 1.1;
+    font-size: 26px;
+    line-height: 1.15;
+    padding-top: 10px;
   }
 
   .hero__tagline p {
-    font-size: 16px;
-    padding-bottom: 12px;
+    font-size: 18px;
+    padding-bottom: 16px;
   }
 
   .hero__search {
@@ -132,6 +147,9 @@
     font-size: 16px;
     padding-block: 12px;
     padding-right: 14px;
-    padding-left: 0;
+  }
+
+  .hero__availability {
+    font-size: 13px;
   }
 }
