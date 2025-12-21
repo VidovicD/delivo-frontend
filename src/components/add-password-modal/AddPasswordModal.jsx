@@ -19,7 +19,7 @@ function AddPasswordModal({ onSuccess, onOpen, onClose }) {
       document.body.style.overflow = "";
       onClose?.();
     };
-  }, []);
+  }, [onOpen, onClose]);
 
   const handleSubmit = async () => {
     setError("");
