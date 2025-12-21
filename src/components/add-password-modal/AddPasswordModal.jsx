@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./AddPasswordModal.css";
 import { supabase } from "../../supabaseClient";
+import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
 
 function AddPasswordModal({ onSuccess }) {
   const [password, setPassword] = useState("");
@@ -40,7 +41,7 @@ function AddPasswordModal({ onSuccess }) {
     setLoading(false);
 
     if (updateError) {
-      setError("Došlo je do greške.");
+      setError("Došlo je do greške. Pokušajte ponovo.");
       return;
     }
 
@@ -67,15 +68,14 @@ function AddPasswordModal({ onSuccess }) {
               setPassword(e.target.value);
               setError("");
             }}
+            className={error ? "error" : ""}
           />
           <button
             type="button"
             className="toggle-password"
-            onClick={() =>
-              setShowPassword((p) => !p)
-            }
+            onClick={() => setShowPassword((p) => !p)}
           >
-            👁
+            {showPassword ? <EyeOpen /> : <EyeClosed />}
           </button>
         </div>
 
@@ -88,12 +88,11 @@ function AddPasswordModal({ onSuccess }) {
               setConfirm(e.target.value);
               setError("");
             }}
+            className={error ? "error" : ""}
           />
         </div>
 
-        {error && (
-          <div className="ap-error">{error}</div>
-        )}
+        {error && <div className="ap-error">{error}</div>}
 
         <button
           className="ap-btn"

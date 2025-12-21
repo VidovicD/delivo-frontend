@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { Autocomplete, useJsApiLoader } from "@react-google-maps/api";
+import { useRef } from "react";
+import { Autocomplete } from "@react-google-maps/api";
 import { useNavigate } from "react-router-dom";
-import { saveAddress } from "../../utils/deliveryAddress";
+import { useAddress } from "../../contexts/AddressContext";
 
 import "./HeroSection.css";
 
@@ -13,47 +13,25 @@ import pin from "../../assets/pin.png";
 
 import FloatingIcons from "../../components/floating-icons/FloatingIcons";
 
-const LIBRARIES = ["places"];
-
 function HeroSection() {
   const navigate = useNavigate();
-  const [autocomplete, setAutocomplete] = useState(null);
+  const { addAddressFromPlace } = useAddress();
+  const autocompleteRef = useRef(null);
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
-    libraries: LIBRARIES,
-  });
-
-  useEffect(() => {
-    const images = [logo, paket, hrana, kamion];
-    images.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, []);
-
-  const onPlaceChanged = () => {
-    if (!autocomplete) return;
-
-    const place = autocomplete.getPlace();
-    const formatted = place?.formatted_address;
+  const onPlaceChanged = async () => {
+    const place = autocompleteRef.current?.getPlace();
+    const address = place?.formatted_address;
     const location = place?.geometry?.location;
 
-    if (!formatted || !location) return;
+    if (!address || !location) return;
 
-    const lat = location.lat();
-    const lng = location.lng();
-    
-    saveAddress({
-      address: formatted,
-      lat,
-      lng,
+    await addAddressFromPlace({
+      address,
+      lat: location.lat(),
+      lng: location.lng(),
     });
 
-    navigate(
-      `/restaurants?address=${encodeURIComponent(formatted)}&lat=${lat}&lng=${lng}`,
-      { replace: true }
-    );
+    navigate("/explore");
   };
 
   return (
@@ -74,28 +52,20 @@ function HeroSection() {
           <div className="hero__search">
             <img src={pin} alt="" className="hero__search-pin" />
 
-            {isLoaded ? (
-              <Autocomplete
-                onLoad={setAutocomplete}
-                onPlaceChanged={onPlaceChanged}
-                options={{
-                  types: ["address"],
-                  componentRestrictions: { country: "rs" },
-                }}
-              >
-                <input
-                  className="hero__search-input"
-                  placeholder="Unesite adresu isporuke..."
-                  autoFocus
-                />
-              </Autocomplete>
-            ) : (
+            <Autocomplete
+              onLoad={(a) => (autocompleteRef.current = a)}
+              onPlaceChanged={onPlaceChanged}
+              options={{
+                types: ["address"],
+                componentRestrictions: { country: "rs" },
+              }}
+            >
               <input
                 className="hero__search-input"
                 placeholder="Unesite adresu isporuke..."
-                disabled
+                autoFocus
               />
-            )}
+            </Autocomplete>
           </div>
         </div>
       </section>

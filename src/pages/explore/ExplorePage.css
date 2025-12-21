@@ -1,27 +1,27 @@
-.restaurants {
+.explore {
   min-height: 100vh;
   background: var(--brand-primary);
   padding: 24px 16px 80px;
 }
 
-.restaurants__header {
+.explore__header {
   max-width: 1200px;
   margin: 0 auto 24px;
   color: var(--brand-accent);
 }
 
-.restaurants__title {
+.explore__title {
   font-size: 28px;
   font-weight: 600;
   margin-bottom: 8px;
 }
 
-.restaurants__address {
+.explore__address {
   color: var(--brand-accent);
   font-size: 14px;
 }
 
-.restaurants__grid {
+.explore__grid {
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
@@ -67,12 +67,12 @@
 }
 
 @media (max-width: 600px) {
-  .restaurants__title {
+  .explore__title {
     font-size: 22px;
   }
 }
 
-.restaurants__logout {
+.explore__logout {
   margin-top: 24px;
   background: none;
   border: none;
@@ -86,11 +86,11 @@
   margin-right: auto;
 }
 
-.restaurants__logout:hover {
+.explore__logout:hover {
   opacity: 1;
 }
 
-.restaurants__change-address {
+.explore__change-address {
   background: none;
   border: none;
   font-size: 13px;
@@ -101,11 +101,11 @@
   margin-top: 6px;
 }
 
-.restaurants__change-address:hover {
+.explore__change-address:hover {
   opacity: 1;
 }
 
-.restaurants__address-input {
+.explore__address-input {
   width: 100%;
   max-width: 420px;
   padding: 14px 18px;
@@ -120,18 +120,18 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.restaurants__address-input::placeholder {
+.explore__address-input::placeholder {
   color: var(--brand-accent);
   opacity: 0.4;
 }
 
-.restaurants__address-input:focus {
+.explore__address-input:focus {
   border-color: var(--brand-accent);
   box-shadow: inset 0 0 0 1px var(--brand-accent);
 }
 
 @media (max-width: 480px) {
-  .restaurants__address-input {
+  .explore__address-input {
     width: 100%;
     max-width: none;
     font-size: 16px;
@@ -236,7 +236,7 @@
   font-size: 16px;
   color: #999;
   cursor: pointer;
-    position: relative;
+  position: relative;
   z-index: 5;
   pointer-events: auto;
 }

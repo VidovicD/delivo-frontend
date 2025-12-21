@@ -39,8 +39,13 @@ function ForgotPasswordForm({
           />
         </div>
 
+        {formError && (
+          <div className="error-text">{formError}</div>
+        )}
+
         <button
           className="auth-submit"
+          type="button"
           onClick={async () => {
             setLoginTouched(true);
             if (!email || !isValidEmail(email)) return;
@@ -52,18 +57,6 @@ function ForgotPasswordForm({
         </button>
 
         <div className="auth-forgot-footer">
-          {loginTouched && !email && (
-            <div className="error-text">
-              Email adresa je obavezna.
-            </div>
-          )}
-
-          {loginTouched && email && !isValidEmail(email) && (
-            <div className="error-text">
-              Unesite ispravnu email adresu.
-            </div>
-          )}
-
           <button
             type="button"
             className="auth-link"

@@ -1,87 +1,59 @@
-import { useEffect, useRef, useState } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { useJsApiLoader } from "@react-google-maps/api";
 import { supabase } from "./supabaseClient";
+import { AddressProvider } from "./contexts/AddressContext";
 
 import "./assets/styles/colors.css";
 
-import Header from "./components/header/Header";
-import Footer from "./components/footer/Footer";
+import AppLayout from "./components/layout/AppLayout";
 import AuthModal from "./components/auth-modal/AuthModal";
-import AddPasswordModal from "./components/add-password/AddPasswordModal";
+import AddPasswordModal from "./components/add-password-modal/AddPasswordModal";
 
 import HomePage from "./pages/home/HomePage";
-import RestaurantsPage from "./pages/restaurants/RestaurantsPage";
+import ExplorePage from "./pages/explore/ExplorePage";
 
-import {
-  syncGuestAddressesToUser,
-  loadUserAddresses,
-  clearGuestAddresses,
-} from "./utils/deliveryAddress";
+import RequireAddress from "./components/require-address/RequireAddress";
+
+import { clearGuestAddresses } from "./utils/deliveryAddress";
+
+const libraries = ["places"];
 
 function Delivo() {
   const navigate = useNavigate();
-  const redirectLock = useRef(false);
 
-  const [session, setSession] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
+  const { isLoaded: mapsReady } = useJsApiLoader({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
+    libraries,
+  });
 
+  const [auth, setAuth] = useState({ session: null, ready: false });
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
-
   const [addressVersion, setAddressVersion] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthReady(true);
+      setAuth({ session: data.session || null, ready: true });
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setAuthReady(true);
+      (event, nextSession) => {
+        setAuth({ session: nextSession || null, ready: true });
         setShowAuthModal(false);
 
-        if (!session?.user) {
-          redirectLock.current = false;
-          return;
-        }
-
-        if (redirectLock.current) return;
-        redirectLock.current = true;
-
-        const userId = session.user.id;
-
-        if (event === "SIGNED_UP") {
-          await syncGuestAddressesToUser(supabase, userId);
-          const list = await loadUserAddresses(supabase, userId);
-
-          if (list?.length) {
-            const a = list[0];
-            navigate(
-              `/restaurants?address=${encodeURIComponent(a.address)}&lat=${a.lat}&lng=${a.lng}`,
-              { replace: true }
-            );
-          }
-
-          setAddressVersion((v) => v + 1);
-          return;
-        }
-
-        if (event === "SIGNED_IN") {
+        if (event === "SIGNED_OUT") {
           clearGuestAddresses();
-          const list = await loadUserAddresses(supabase, userId);
+          navigate("/", { replace: true });
+        }
 
-          if (list?.length) {
-            const a = list[0];
-            navigate(
-              `/restaurants?address=${encodeURIComponent(a.address)}&lat=${a.lat}&lng=${a.lng}`,
-              { replace: true }
-            );
-          }
-
+        if (
+          (event === "SIGNED_IN" || event === "SIGNED_UP") &&
+          nextSession?.user
+        ) {
+          clearGuestAddresses();
           setAddressVersion((v) => v + 1);
-          return;
+          navigate("/explore", { replace: true });
         }
       }
     );
@@ -91,64 +63,87 @@ function Delivo() {
     };
   }, [navigate]);
 
+  const session = auth.session;
+  const authReady = auth.ready;
+
+  useEffect(() => {
+    if (!authReady) return;
+    if (!session?.user) return;
+
+    if (window.location.pathname === "/") {
+      navigate("/explore", { replace: true });
+    }
+  }, [authReady, session, navigate]);
+
+  if (!mapsReady || !authReady) {
+    return null;
+  }
+
   const needsPassword =
     session?.user &&
-    session.user.identities?.some(
-      (i) => i.provider === "google"
-    ) &&
+    session.user.identities?.some((i) => i.provider === "google") &&
     !session.user.user_metadata?.password_set;
 
   return (
-    <>
-      <Header
-        session={session}
-        authReady={authReady}
-        onAuthOpen={(mode) => {
-          setAuthMode(mode);
-          setShowAuthModal(true);
-        }}
-      />
-
+    <AddressProvider
+      session={session}
+      addressVersion={addressVersion}
+      authReady={authReady}
+    >
       <Routes>
         <Route
           path="/"
-          element={<HomePage session={session} />}
+          element={
+            <AppLayout
+              session={session}
+              authReady={authReady}
+              onAuthOpen={(mode) => {
+                setAuthMode(mode);
+                setShowAuthModal(true);
+              }}
+            >
+              <HomePage />
+            </AppLayout>
+          }
         />
 
         <Route
-          path="/restaurants"
+          path="/explore"
           element={
-            <RestaurantsPage
-              key={addressVersion}
+            <AppLayout
               session={session}
-              addressVersion={addressVersion}
-            />
+              authReady={authReady}
+              onAuthOpen={(mode) => {
+                setAuthMode(mode);
+                setShowAuthModal(true);
+              }}
+            >
+              <RequireAddress>
+                <ExplorePage />
+              </RequireAddress>
+            </AppLayout>
           }
         />
-      </Routes>
 
-      <Footer />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {showAuthModal && (
         <AuthModal
           mode={authMode}
-          onClose={() => {
-            setShowAuthModal(false);
-            setAuthMode(null);
-          }}
+          onClose={() => setShowAuthModal(false)}
           onSwitch={setAuthMode}
         />
       )}
 
       {session && needsPassword && (
         <AddPasswordModal
-          onSuccess={async () => {
-            const { data } = await supabase.auth.getSession();
-            setSession(data.session);
+          onSuccess={() => {
+            setAddressVersion((v) => v + 1);
           }}
         />
       )}
-    </>
+    </AddressProvider>
   );
 }
 

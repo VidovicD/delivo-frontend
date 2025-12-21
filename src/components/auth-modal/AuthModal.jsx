@@ -9,12 +9,12 @@ import useAuthFlow from "./useAuthFlow";
 import { isValidEmail } from "./authUtils";
 
 function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
-  const {
-    refs,
-    state,
-    setters,
-    handlers,
-  } = useAuthFlow({ mode, onSwitch, onSuccess, onClose });
+  const { refs, state, setters, handlers } = useAuthFlow({
+    mode,
+    onSwitch,
+    onSuccess,
+    onClose,
+  });
 
   const {
     step,
@@ -75,7 +75,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
             loginTouched={loginTouched}
             setLoginTouched={setters.setLoginTouched}
             formError={formError}
-            setFormError={() => {}}
+            setFormError={setters.setFormError}
             onSubmit={handlers.handleForgotPassword}
             onBack={() => {
               setters.setLoginTouched(false);
@@ -87,19 +87,25 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
         {step === "auth" && (
           <>
             <div className="auth-hero">
-              <h2>{mode === "login" ? "Prijava" : "Registracija"}</h2>
+              <h2>
+                {mode === "login" ? "Prijava" : "Registracija"}
+              </h2>
             </div>
 
             <div className="auth-tabs">
               <div
-                className={`auth-tab ${mode === "login" ? "active" : ""}`}
+                className={`auth-tab ${
+                  mode === "login" ? "active" : ""
+                }`}
                 onClick={() => handlers.switchMode("login")}
               >
                 Prijava
               </div>
 
               <div
-                className={`auth-tab ${mode === "register" ? "active" : ""}`}
+                className={`auth-tab ${
+                  mode === "register" ? "active" : ""
+                }`}
                 onClick={() => handlers.switchMode("register")}
               >
                 Registracija
@@ -127,7 +133,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                   setters.setLoginPassword("");
                   setters.setStep("auth");
                 }}
-                onForgot={() => setters.setStep("forgot")}
                 showPassword={showPassword}
                 setShowPassword={setters.setShowPassword}
               />
