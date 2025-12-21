@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { useJsApiLoader } from "@react-google-maps/api";
 import { supabase } from "./supabaseClient";
 import { AddressProvider } from "./contexts/AddressContext";
 
@@ -24,15 +23,8 @@ import {
   syncGuestAddressesToUser,
 } from "./utils/deliveryAddress";
 
-const libraries = ["places"];
-
 function Delivo() {
   const navigate = useNavigate();
-
-  const { isLoaded: mapsReady } = useJsApiLoader({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_KEY,
-    libraries,
-  });
 
   const [auth, setAuth] = useState({ session: null, ready: false });
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -110,7 +102,7 @@ function Delivo() {
     };
   }, [navigate]);
 
-  if (!mapsReady || !auth.ready) return null;
+  if (!auth.ready) return null;
 
   const session = auth.session;
 
@@ -119,7 +111,8 @@ function Delivo() {
     session.user.identities?.some((i) => i.provider === "google") &&
     !session.user.user_metadata?.password_set;
 
-  const layoutLocked = passwordFlowActive || needsPassword || showAddAddressModal;
+  const layoutLocked =
+    passwordFlowActive || needsPassword || showAddAddressModal;
 
   return (
     <AddressProvider

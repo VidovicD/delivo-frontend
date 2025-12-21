@@ -1,7 +1,7 @@
 import HeroSection from "./HeroSection";
 
-function HomePage() {
-  return <HeroSection />;
+function HomePage({ mapsReady }) {
+  return <HeroSection mapsReady={mapsReady} />;
 }
 
 export default HomePage;

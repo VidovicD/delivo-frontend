@@ -36,8 +36,7 @@
   font-size: 48px;
   margin: 0;
   padding-top: 15px;
-  line-height: 1.10;
-  color: var(--brand-accent);
+  line-height: 1.1;
 }
 
 .hero__tagline p {
@@ -46,27 +45,29 @@
   font-size: 26px;
   margin: 0;
   padding-bottom: 25px;
-  color: var(--brand-accent);
 }
 
 .hero__availability {
   margin-top: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--brand-accent);
   opacity: 0.4;
-  text-align: center;
 }
 
+/* ================= SEARCH ================= */
+
 .hero__search {
+  position: relative;
   display: flex;
   align-items: center;
   width: 360px;
+  min-height: 52px;
+
   background-color: var(--brand-neutral);
   border-radius: 30px;
   border: 1px solid #00000020;
+
   transition: box-shadow 0.15s ease, border-color 0.15s ease;
-  min-height: 52px;
 }
 
 .hero__search:focus-within {
@@ -79,11 +80,6 @@
   height: 30px;
   margin-inline: 14px;
   flex-shrink: 0;
-}
-
-.hero__search > div {
-  flex: 1;
-  display: flex;
 }
 
 .hero__search-input {
@@ -104,9 +100,42 @@
   opacity: 0.4;
 }
 
-.pac-container {
-  z-index: 99999 !important;
+/* ================= DROPDOWN ================= */
+
+.hero__suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+
+  background-color: var(--brand-neutral);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+
+  overflow: hidden;
+  z-index: 20;
 }
+
+.hero__suggestions button {
+  width: 100%;
+  padding: 12px 16px;
+
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--brand-accent);
+}
+
+.hero__suggestions button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+
+/* ================= MOBILE ================= */
 
 @media (max-width: 480px) {
   .hero {
@@ -121,13 +150,10 @@
 
   .hero__tagline h1 {
     font-size: 26px;
-    line-height: 1.15;
-    padding-top: 10px;
   }
 
   .hero__tagline p {
     font-size: 18px;
-    padding-bottom: 16px;
   }
 
   .hero__search {
@@ -144,12 +170,7 @@
   }
 
   .hero__search-input {
-    font-size: 16px;
     padding-block: 12px;
     padding-right: 14px;
-  }
-
-  .hero__availability {
-    font-size: 13px;
   }
 }

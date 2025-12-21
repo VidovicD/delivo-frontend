@@ -1,5 +1,4 @@
-import { useRef } from "react";
-import { Autocomplete } from "@react-google-maps/api";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAddress } from "../../contexts/AddressContext";
 
@@ -16,23 +15,56 @@ import FloatingIcons from "../../components/floating-icons/FloatingIcons";
 function HeroSection() {
   const navigate = useNavigate();
   const { addAddressFromPlace } = useAddress();
-  const autocompleteRef = useRef(null);
 
-  const onPlaceChanged = async () => {
-    const place = autocompleteRef.current?.getPlace();
-    const address = place?.formatted_address;
-    const location = place?.geometry?.location;
+  const inputRef = useRef(null);
+  const sessionTokenRef = useRef(null);
 
-    if (!address || !location) return;
+  const [suggestions, setSuggestions] = useState([]);
 
-    await addAddressFromPlace({
-      address,
-      lat: location.lat(),
-      lng: location.lng(),
+  useEffect(() => {
+    if (!window.google?.maps?.places) return;
+
+    sessionTokenRef.current =
+      new window.google.maps.places.AutocompleteSessionToken();
+  }, []);
+
+  async function handleInput(e) {
+    const value = e.target.value;
+
+    if (!value) {
+      setSuggestions([]);
+      return;
+    }
+
+    const response =
+      await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
+        {
+          input: value,
+          sessionToken: sessionTokenRef.current,
+          includedRegionCodes: ["RS"],
+        }
+      );
+
+    setSuggestions(response.suggestions || []);
+  }
+
+  async function handleSelect(suggestion) {
+    const place = suggestion.placePrediction.toPlace();
+
+    await place.fetchFields({
+      fields: ["formattedAddress", "location"],
     });
 
-    navigate("/explore");
-  };
+    if (!place.formattedAddress || !place.location) return;
+
+    const address = place.formattedAddress;
+    const lat = place.location.lat();
+    const lng = place.location.lng();
+
+    await addAddressFromPlace({ address, lat, lng });
+
+    navigate("/explore", { replace: true });
+  }
 
   return (
     <section className="home">
@@ -52,21 +84,29 @@ function HeroSection() {
           <div className="hero__search">
             <img src={pin} alt="" className="hero__search-pin" />
 
-            <Autocomplete
-              onLoad={(a) => (autocompleteRef.current = a)}
-              onPlaceChanged={onPlaceChanged}
-              options={{
-                types: ["address"],
-                componentRestrictions: { country: "rs" },
-              }}
-            >
-              <input
-                className="hero__search-input"
-                placeholder="Unesite adresu isporuke..."
-                autoFocus
-              />
-            </Autocomplete>
+            <input
+              ref={inputRef}
+              className="hero__search-input"
+              placeholder="Unesite adresu isporuke…"
+              onChange={handleInput}
+              autoComplete="off"
+            />
+
+            {suggestions.length > 0 && (
+              <div className="hero__suggestions">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSelect(s)}
+                  >
+                    {s.placePrediction.text.text}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
           <p className="hero__availability">
             Trenutno dostupno u Novom Sadu.
           </p>
