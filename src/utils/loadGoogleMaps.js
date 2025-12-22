@@ -1,7 +1,7 @@
 let loadingPromise = null;
 
 export function loadGoogleMaps() {
-  if (window.google?.maps?.places) {
+  if (window.google && window.google.maps && window.google.maps.places) {
     return Promise.resolve();
   }
 
@@ -16,7 +16,7 @@ export function loadGoogleMaps() {
     script.defer = true;
 
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Google Maps failed to load"));
+    script.onerror = () => reject();
 
     document.head.appendChild(script);
   });

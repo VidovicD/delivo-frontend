@@ -24,13 +24,11 @@ function HeroSection() {
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    loadGoogleMaps()
-      .then(() => {
-        sessionTokenRef.current =
-          new window.google.maps.places.AutocompleteSessionToken();
-        setMapsReady(true);
-      })
-      .catch(() => {});
+    loadGoogleMaps().then(() => {
+      sessionTokenRef.current =
+        new window.google.maps.places.AutocompleteSessionToken();
+      setMapsReady(true);
+    });
   }, []);
 
   async function handleInput(e) {
@@ -43,7 +41,7 @@ function HeroSection() {
       return;
     }
 
-    const response =
+    const { suggestions } =
       await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
         {
           input: value,
@@ -52,7 +50,7 @@ function HeroSection() {
         }
       );
 
-    setSuggestions(response.suggestions || []);
+    setSuggestions(suggestions || []);
   }
 
   async function handleSelect(suggestion) {
@@ -66,11 +64,11 @@ function HeroSection() {
 
     if (!place.formattedAddress || !place.location) return;
 
-    const address = place.formattedAddress;
-    const lat = place.location.lat();
-    const lng = place.location.lng();
-
-    await addAddressFromPlace({ address, lat, lng });
+    await addAddressFromPlace({
+      address: place.formattedAddress,
+      lat: place.location.lat(),
+      lng: place.location.lng(),
+    });
 
     navigate("/explore", { replace: true });
   }
