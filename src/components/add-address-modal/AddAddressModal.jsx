@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAddress } from "../../contexts/AddressContext";
+import { loadGoogleMaps } from "../../utils/loadGoogleMaps";
 
 import "./AddAddressModal.css";
 
@@ -9,16 +10,22 @@ function AddAddressModal({ onClose }) {
   const inputRef = useRef(null);
   const sessionTokenRef = useRef(null);
 
+  const [mapsReady, setMapsReady] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
-    if (!window.google?.maps?.places) return;
-
-    sessionTokenRef.current =
-      new window.google.maps.places.AutocompleteSessionToken();
+    loadGoogleMaps()
+      .then(() => {
+        sessionTokenRef.current =
+          new window.google.maps.places.AutocompleteSessionToken();
+        setMapsReady(true);
+      })
+      .catch(() => {});
   }, []);
 
   async function handleInput(e) {
+    if (!mapsReady) return;
+
     const value = e.target.value;
 
     if (!value) {
@@ -39,6 +46,8 @@ function AddAddressModal({ onClose }) {
   }
 
   async function handleSelect(suggestion) {
+    if (!mapsReady) return;
+
     const place = suggestion.placePrediction.toPlace();
 
     await place.fetchFields({
@@ -68,6 +77,7 @@ function AddAddressModal({ onClose }) {
             placeholder="Unesite adresu…"
             onChange={handleInput}
             autoComplete="off"
+            disabled={!mapsReady}
           />
 
           {suggestions.length > 0 && (
