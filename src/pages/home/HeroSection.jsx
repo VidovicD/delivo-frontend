@@ -18,15 +18,12 @@ function HeroSection() {
   const { addAddressFromPlace } = useAddress();
 
   const inputRef = useRef(null);
-  const sessionTokenRef = useRef(null);
 
   const [mapsReady, setMapsReady] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
     loadGoogleMaps().then(() => {
-      sessionTokenRef.current =
-        new window.google.maps.places.AutocompleteSessionToken();
       setMapsReady(true);
     });
   }, []);
@@ -45,7 +42,6 @@ function HeroSection() {
       await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
         {
           input: value,
-          sessionToken: sessionTokenRef.current,
           includedRegionCodes: ["RS"],
         }
       );
