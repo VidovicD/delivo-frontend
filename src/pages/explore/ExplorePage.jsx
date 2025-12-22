@@ -35,38 +35,49 @@ function ExplorePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("ACTIVE ADDRESS:", activeAddress);
+
     const lat = activeAddress?.lat;
     const lng = activeAddress?.lng;
 
+    console.log("ACTIVE LAT/LNG:", lat, lng);
+
     if (lat == null || lng == null) {
+      console.log("NO LAT/LNG → SKIP FETCH");
       setRestaurants([]);
       setLoading(false);
       return;
     }
 
     const loadRestaurants = async () => {
+      console.log("FETCHING RESTAURANTS…");
       setLoading(true);
 
       const { data, error } = await supabase
         .from("restaurants")
         .select("id, name, address, lat, lng");
 
+      console.log("SUPABASE RESPONSE:", { data, error });
+
       if (error) {
+        console.error("SUPABASE ERROR:", error);
         setRestaurants([]);
         setLoading(false);
         return;
       }
 
-      setRestaurants(
+      const mapped =
         (data || []).map((r) => ({
           ...r,
           distanceKm:
             r.lat != null && r.lng != null
               ? getDistanceKm(lat, lng, r.lat, r.lng)
               : null,
-        }))
-      );
+        }));
 
+      console.log("MAPPED RESTAURANTS:", mapped);
+
+      setRestaurants(mapped);
       setLoading(false);
     };
 
@@ -126,16 +137,18 @@ function ExplorePage() {
                 ))}
 
                 {savedAddresses.length < MAX_ADDRESSES && (
-                <button
-                  className="address-picker__new"
-                  type="button"
-                  onClick={() => {
-                    setShowPicker(false);
-                    window.dispatchEvent(new CustomEvent("open-add-address"));
-                  }}
-                >
-                  + Nova adresa
-                </button>
+                  <button
+                    className="address-picker__new"
+                    type="button"
+                    onClick={() => {
+                      setShowPicker(false);
+                      window.dispatchEvent(
+                        new CustomEvent("open-add-address")
+                      );
+                    }}
+                  >
+                    + Nova adresa
+                  </button>
                 )}
               </div>
             )}
@@ -148,7 +161,6 @@ function ExplorePage() {
               type="button"
               className="address-picker__new"
               onClick={() => {
-                // samo signal – modal dolazi iz RequireAddress
                 window.dispatchEvent(new CustomEvent("open-add-address"));
               }}
             >
