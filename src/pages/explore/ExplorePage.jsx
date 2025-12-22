@@ -35,49 +35,38 @@ function ExplorePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("ACTIVE ADDRESS:", activeAddress);
-
     const lat = activeAddress?.lat;
     const lng = activeAddress?.lng;
 
-    console.log("ACTIVE LAT/LNG:", lat, lng);
-
     if (lat == null || lng == null) {
-      console.log("NO LAT/LNG → SKIP FETCH");
       setRestaurants([]);
       setLoading(false);
       return;
     }
 
     const loadRestaurants = async () => {
-      console.log("FETCHING RESTAURANTS…");
       setLoading(true);
 
       const { data, error } = await supabase
         .from("restaurants")
         .select("id, name, address, lat, lng");
 
-      console.log("SUPABASE RESPONSE:", { data, error });
-
       if (error) {
-        console.error("SUPABASE ERROR:", error);
         setRestaurants([]);
         setLoading(false);
         return;
       }
 
-      const mapped =
+      setRestaurants(
         (data || []).map((r) => ({
           ...r,
           distanceKm:
             r.lat != null && r.lng != null
               ? getDistanceKm(lat, lng, r.lat, r.lng)
               : null,
-        }));
+        }))
+      );
 
-      console.log("MAPPED RESTAURANTS:", mapped);
-
-      setRestaurants(mapped);
       setLoading(false);
     };
 
