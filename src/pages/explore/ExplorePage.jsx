@@ -82,7 +82,7 @@ function ExplorePage() {
     };
 
     loadRestaurants();
-  }, [activeAddress?.lat, activeAddress?.lng]);
+  }, [activeAddress]);
 
   return (
     <div className="explore">
@@ -152,20 +152,6 @@ function ExplorePage() {
                 )}
               </div>
             )}
-          </div>
-        )}
-
-        {savedAddresses.length === 0 && (
-          <div style={{ marginTop: 10 }}>
-            <button
-              type="button"
-              className="address-picker__new"
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent("open-add-address"));
-              }}
-            >
-              + Dodaj adresu
-            </button>
           </div>
         )}
       </div>
