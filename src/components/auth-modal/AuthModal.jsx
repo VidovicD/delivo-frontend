@@ -19,15 +19,22 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
   const {
     step,
     successType,
+
+    loginMethod,
     loginStep,
-    loginEmail,
+    loginValue,
     loginPassword,
+    loginTouched,
+
+    registerStep,
     registerName,
     registerPhone,
     registerEmail,
     registerPassword,
-    loginTouched,
     registerTouched,
+
+    selectedCountry,
+
     loading,
     showPassword,
     formError,
@@ -50,6 +57,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
       >
         <button
           className="auth-close"
+          type="button"
           disabled={loading}
           onClick={onClose}
         >
@@ -61,15 +69,15 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
             successType={successType}
             onLogin={() => {
               setters.setStep("auth");
-              onSwitch("login");
+              handlers.switchMode("login");
             }}
           />
         )}
 
         {step === "forgot" && (
           <ForgotPasswordForm
-            email={loginEmail}
-            setEmail={setters.setLoginEmail}
+            email={loginValue}
+            setEmail={setters.setLoginValue}
             emailRef={refs.emailRef}
             loading={loading}
             loginTouched={loginTouched}
@@ -87,25 +95,19 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
         {step === "auth" && (
           <>
             <div className="auth-hero">
-              <h2>
-                {mode === "login" ? "Prijava" : "Registracija"}
-              </h2>
+              <h2>{mode === "login" ? "Prijava" : "Registracija"}</h2>
             </div>
 
             <div className="auth-tabs">
               <div
-                className={`auth-tab ${
-                  mode === "login" ? "active" : ""
-                }`}
+                className={`auth-tab ${mode === "login" ? "active" : ""}`}
                 onClick={() => handlers.switchMode("login")}
               >
                 Prijava
               </div>
 
               <div
-                className={`auth-tab ${
-                  mode === "register" ? "active" : ""
-                }`}
+                className={`auth-tab ${mode === "register" ? "active" : ""}`}
                 onClick={() => handlers.switchMode("register")}
               >
                 Registracija
@@ -116,10 +118,12 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
 
             {mode === "login" && (
               <LoginForm
+                loginMethod={loginMethod}
+                setLoginMethod={setters.setLoginMethod}
                 loginStep={loginStep}
-                loginEmail={loginEmail}
+                loginValue={loginValue}
                 loginPassword={loginPassword}
-                setLoginEmail={setters.setLoginEmail}
+                setLoginValue={setters.setLoginValue}
                 setLoginPassword={setters.setLoginPassword}
                 loginTouched={loginTouched}
                 setLoginTouched={setters.setLoginTouched}
@@ -129,10 +133,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 passwordRef={refs.passwordRef}
                 onNext={handlers.handleLoginNext}
                 onSubmit={handlers.handleSubmit}
-                onBack={() => {
-                  setters.setLoginPassword("");
-                  setters.setStep("auth");
-                }}
+                onBack={() => handlers.switchMode("login")}
                 showPassword={showPassword}
                 setShowPassword={setters.setShowPassword}
               />
@@ -140,6 +141,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
 
             {mode === "register" && (
               <RegisterForm
+                registerStep={registerStep}
                 registerName={registerName}
                 registerPhone={registerPhone}
                 registerEmail={registerEmail}
@@ -156,9 +158,12 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 nameRef={refs.nameRef}
                 phoneRef={refs.phoneRef}
                 emailRef={refs.emailRef}
+                onNextStep={handlers.handleRegisterNextStep}
                 onSubmit={handlers.handleSubmit}
                 showPassword={showPassword}
                 setShowPassword={setters.setShowPassword}
+                selectedCountry={selectedCountry}
+                setSelectedCountry={setters.setSelectedCountry}
               />
             )}
 
@@ -176,8 +181,8 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
               <button
                 type="button"
                 className="auth-forgot"
-                onClick={() => setters.setStep("forgot")}
                 disabled={loading}
+                onClick={() => setters.setStep("forgot")}
               >
                 Zaboravili ste lozinku?
               </button>

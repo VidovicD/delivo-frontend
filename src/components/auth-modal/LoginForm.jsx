@@ -2,10 +2,12 @@ import React from "react";
 import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
 
 function LoginForm({
+  loginMethod,
+  setLoginMethod,
   loginStep,
-  loginEmail,
+  loginValue,
   loginPassword,
-  setLoginEmail,
+  setLoginValue,
   setLoginPassword,
   loginTouched,
   setLoginTouched,
@@ -19,35 +21,66 @@ function LoginForm({
   showPassword,
   setShowPassword,
 }) {
+  const isPhone = loginMethod === "phone";
+  const isEmail = loginMethod === "email";
+
   return (
     <div className="auth-form">
-      {loginStep === "email" && (
+      {loginStep === "value" && (
         <>
           <div className="form-field">
-            <label>Email adresa</label>
+            <label>{isPhone ? "Broj telefona" : "Email adresa"}</label>
+
             <input
-              type="email"
-              value={loginEmail}
+              type="text"
+              value={loginValue}
+              disabled={isPhone}
+              placeholder={
+                isPhone ? "Uskoro dostupno" : "email@primer.com"
+              }
               onChange={(e) => {
-                setLoginEmail(e.target.value);
+                setLoginValue(e.target.value);
                 setLoginTouched(false);
               }}
               className={
-                loginTouched &&
-                (!loginEmail || !isValidEmail(loginEmail))
+                isPhone
+                  ? "disabled"
+                  : loginTouched &&
+                    (!loginValue ||
+                      (isEmail && !isValidEmail(loginValue)))
                   ? "error"
                   : ""
               }
             />
           </div>
 
+          {isPhone && (
+            <div className="auth-helper-text">
+              Prijava preko broja telefona uskoro će biti dostupna.
+            </div>
+          )}
+
           <button
             className="auth-submit"
             type="button"
-            onClick={onNext}
-            disabled={loading}
+            onClick={isEmail ? onNext : undefined}
+            disabled={loading || isPhone}
           >
             Nastavi
+          </button>
+
+          <button
+            type="button"
+            className="auth-link"
+            onClick={() => {
+              setLoginMethod(isPhone ? "email" : "phone");
+              setLoginValue("");
+              setLoginTouched(false);
+            }}
+          >
+            {isPhone
+              ? "Ili se prijavi preko emaila"
+              : "Prijavi se preko broja telefona"}
           </button>
         </>
       )}
@@ -70,13 +103,16 @@ function LoginForm({
                   setLoginPassword(e.target.value);
                   setLoginTouched(false);
                 }}
-                className={loginTouched && !loginPassword ? "error" : ""}
+                className={
+                  loginTouched && !loginPassword ? "error" : ""
+                }
               />
 
               <button
                 type="button"
                 className="toggle-password"
                 onClick={() => setShowPassword((p) => !p)}
+                tabIndex={-1}
               >
                 {showPassword ? <EyeOpen /> : <EyeClosed />}
               </button>
@@ -96,6 +132,7 @@ function LoginForm({
             type="button"
             className="auth-link"
             onClick={onBack}
+            disabled={loading}
           >
             Nazad
           </button>

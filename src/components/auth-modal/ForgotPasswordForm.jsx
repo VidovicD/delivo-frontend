@@ -39,17 +39,14 @@ function ForgotPasswordForm({
           />
         </div>
 
-        {formError && (
-          <div className="error-text">{formError}</div>
-        )}
+        {formError && <div className="error-text">{formError}</div>}
 
         <button
           className="auth-submit"
           type="button"
-          onClick={async () => {
+          onClick={() => {
             setLoginTouched(true);
-            if (!email || !isValidEmail(email)) return;
-            await onSubmit();
+            onSubmit();
           }}
           disabled={loading}
         >
@@ -61,6 +58,7 @@ function ForgotPasswordForm({
             type="button"
             className="auth-link"
             onClick={onBack}
+            disabled={loading}
           >
             Nazad
           </button>

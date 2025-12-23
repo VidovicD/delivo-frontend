@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { isValidEmail, getAuthErrorMessage } from "./authUtils";
 import {
-  checkEmailExists,
+  isValidEmail,
+  normalizePhone,
+  isValidPhone,
+  getAuthErrorMessage,
+} from "./authUtils";
+import {
   loginWithPassword,
   registerWithPassword,
   googleOAuth,
   resetPassword,
-  resendVerificationEmail,
 } from "./authActions";
 import { supabase } from "../../supabaseClient";
 import { syncGuestAddressesToUser } from "../../utils/deliveryAddress";
+import { COUNTRIES } from "../../utils/countries";
 
 export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const modalRef = useRef(null);
@@ -21,17 +25,18 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [step, setStep] = useState("auth");
   const [successType, setSuccessType] = useState("auth");
 
-  const [loginStep, setLoginStep] = useState("email");
-
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginMethod, setLoginMethod] = useState("phone");
+  const [loginStep, setLoginStep] = useState("value");
+  const [loginValue, setLoginValue] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
+  const [registerStep, setRegisterStep] = useState("phone");
   const [registerName, setRegisterName] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
 
-  const email = mode === "login" ? loginEmail : registerEmail;
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,281 +45,275 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [loginTouched, setLoginTouched] = useState(false);
   const [registerTouched, setRegisterTouched] = useState(false);
 
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [resendSuccess, setResendSuccess] = useState("");
-  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
-
-  const resendKey = email ? `resendUntil:${email}` : null;
-
-  const switchMode = (nextMode) => {
-    setStep("auth");
-    setLoginTouched(false);
-    setRegisterTouched(false);
-    setFormError("");
-
-    setLoginEmail("");
+  const resetLoginState = () => {
+    setLoginMethod("phone");
+    setLoginStep("value");
+    setLoginValue("");
     setLoginPassword("");
+    setLoginTouched(false);
+  };
+
+  const resetRegisterState = () => {
+    setRegisterStep("phone");
     setRegisterName("");
     setRegisterPhone("");
     setRegisterEmail("");
     setRegisterPassword("");
+    setRegisterTouched(false);
+    setSelectedCountry(COUNTRIES[0]);
+  };
 
-    if (nextMode === "login") {
-      setLoginStep("email");
-    }
+  const switchMode = (nextMode) => {
+    setStep("auth");
+    setSuccessType("auth");
+    setFormError("");
+    setShowPassword(false);
+    setLoading(false);
+
+    resetLoginState();
+    resetRegisterState();
 
     onSwitch(nextMode);
   };
 
   useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const i = setInterval(() => setResendCooldown((p) => p - 1), 1000);
-    return () => clearInterval(i);
-  }, [resendCooldown]);
-
-  useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   useEffect(() => {
-    modalRef.current?.focus();
-    setLoading(false);
-
     if (step !== "auth") return;
 
-    if (mode === "register") nameRef.current?.focus();
-    else emailRef.current?.focus();
-  }, [mode, step]);
-
-  useEffect(() => {
-    setShowPassword(false);
-  }, [mode]);
-
-  useEffect(() => {
-    if (!resendKey) return;
-    const until = Number(localStorage.getItem(resendKey) || 0);
-    const now = Date.now();
-    if (until > now) {
-      setResendCooldown(Math.ceil((until - now) / 1000));
+    if (mode === "login") {
+      if (loginStep === "value") emailRef.current?.focus();
+      if (loginStep === "password") passwordRef.current?.focus();
     }
-  }, [resendKey]);
 
-  useEffect(() => {
-    setResendSuccess("");
-    setNeedsEmailVerification(false);
-  }, [email]);
+    if (mode === "register") {
+      if (registerStep === "phone") phoneRef.current?.focus();
+      if (registerStep === "details") nameRef.current?.focus();
+    }
+  }, [mode, step, loginStep, registerStep]);
 
   const handleGoogleLogin = async () => {
     if (loading) return;
-    await googleOAuth();
+
+    try {
+      setFormError("");
+      setLoading(true);
+      await googleOAuth();
+    } catch (e) {
+      setFormError(getAuthErrorMessage(e));
+      setLoading(false);
+    }
   };
 
   const handleLoginNext = async () => {
+    if (loading) return;
+
     setLoginTouched(true);
     setFormError("");
-    setNeedsEmailVerification(false);
 
-    if (!loginEmail) {
+    if (loginMethod === "phone") {
+      setFormError("Prijava preko broja telefona uskoro će biti dostupna.");
+      return;
+    }
+
+    if (!loginValue) {
       setFormError("Email je obavezan.");
       return;
     }
 
-    if (!isValidEmail(loginEmail)) {
+    if (!isValidEmail(loginValue)) {
       setFormError("Unesite ispravnu email adresu.");
+      return;
+    }
+
+    setLoginTouched(false);
+    setLoginStep("password");
+    requestAnimationFrame(() => passwordRef.current?.focus());
+  };
+
+  const handleLoginSubmit = async () => {
+    if (loading) return;
+
+    setLoginTouched(true);
+    setFormError("");
+
+    if (!loginPassword) {
+      setFormError("Lozinka je obavezna.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const data = await checkEmailExists(loginEmail);
+      await loginWithPassword(loginValue, loginPassword);
+      setSuccessType("auth");
+      setStep("success");
+      setTimeout(() => onSuccess?.(), 600);
+    } catch (e) {
+      setFormError(getAuthErrorMessage(e));
+    } finally {
       setLoading(false);
-
-      if (!data?.exists) {
-        setFormError("Ne postoji nalog sa ovom email adresom.");
-        return;
-      }
-
-      if (data.exists && !data.confirmed) {
-        setNeedsEmailVerification(true);
-        setFormError("Email adresa nije potvrđena. Proverite inbox.");
-        return;
-      }
-
-      setLoginTouched(false);
-      setLoginStep("password");
-      requestAnimationFrame(() => passwordRef.current?.focus());
-    } catch {
-      setLoading(false);
-      setFormError("Došlo je do greške. Pokušajte ponovo.");
     }
   };
 
-  const handleSubmit = async () => {
+  const handleRegisterNextStep = async () => {
+    if (loading) return;
+
+    setRegisterTouched(true);
     setFormError("");
 
-    if (mode === "login") setLoginTouched(true);
-    else setRegisterTouched(true);
-
-    /* ---------------- LOGIN ---------------- */
-    if (mode === "login") {
-      if (!loginEmail) {
-        setFormError("Email je obavezan.");
-        return;
-      }
-
-      if (loginStep !== "password") {
-        setLoginStep("password");
-        requestAnimationFrame(() => passwordRef.current?.focus());
-        return;
-      }
-
-      if (!loginPassword) {
-        setFormError("Lozinka je obavezna.");
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        await loginWithPassword(loginEmail, loginPassword);
-        setLoading(false);
-        setSuccessType("auth");
-        setStep("success");
-        setTimeout(() => onSuccess?.(), 600);
-      } catch (e) {
-        setLoading(false);
-
-        if (e.message?.toLowerCase().includes("confirm")) {
-          setNeedsEmailVerification(true);
-          setResendSuccess("");
-          setFormError(
-            "Email adresa nije potvrđena. Proverite inbox i kliknite na link za potvrdu."
-          );
-          return;
-        }
-
-        setFormError(getAuthErrorMessage(e));
-      }
-
+    if (!registerPhone) {
+      setFormError("Broj telefona je obavezan.");
       return;
     }
 
-    /* ---------------- REGISTER ---------------- */
-    if (
-      !registerName ||
-      !registerPhone ||
-      !registerEmail ||
-      !registerPassword
-    ) {
+    const normalizedPhone = normalizePhone(
+      registerPhone,
+      selectedCountry.dialCode
+    );
+
+    if (!isValidPhone(normalizedPhone)) {
+      setFormError("Unesite ispravan broj telefona.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("check-phone", {
+        body: { phone: normalizedPhone },
+      });
+
+      if (error) throw error;
+
+      if (data?.exists) {
+        setFormError("Već postoji nalog sa ovim brojem telefona. Prijavite se.");
+        return;
+      }
+
+      setRegisterTouched(false);
+      setRegisterStep("details");
+      requestAnimationFrame(() => nameRef.current?.focus());
+    } catch (e) {
+      setFormError(getAuthErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async () => {
+    if (loading) return;
+
+    setRegisterTouched(true);
+    setFormError("");
+
+    if (registerStep === "phone") {
+      await handleRegisterNextStep();
+      return;
+    }
+
+    if (!registerName || !registerEmail || !registerPassword) {
       setFormError("Popunite sva obavezna polja.");
       return;
     }
 
     if (!isValidEmail(registerEmail)) {
-      setFormError("Unesite ispravnu email adresu.");
+      setFormError("Email adresa nije validna.");
       return;
     }
 
     if (registerPassword.length < 6) {
-      setFormError("Lozinka mora sadržati najmanje 6 karaktera.");
+      setFormError("Lozinka mora imati najmanje 6 karaktera.");
+      return;
+    }
+
+    const normalizedPhone = normalizePhone(
+      registerPhone,
+      selectedCountry.dialCode
+    );
+
+    if (!isValidPhone(normalizedPhone)) {
+      setFormError("Unesite ispravan broj telefona.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const data = await checkEmailExists(registerEmail);
-
-      if (data?.exists && data?.confirmed) {
-        setLoading(false);
-        onSwitch("login");
-        requestAnimationFrame(() =>
-          setFormError("Nalog sa ovom email adresom već postoji. Prijavite se.")
-        );
-        return;
-      }
-
-      if (data?.exists && !data?.confirmed) {
-        setLoading(false);
-        setNeedsEmailVerification(true);
-        setResendSuccess("");
-        setFormError(
-          "Nalog već postoji, ali email nije potvrđen. Proverite inbox."
-        );
-        return;
-      }
-
-      const { data: signUpData, error } = await registerWithPassword(
+      const data = await registerWithPassword(
         registerEmail,
         registerPassword,
         {
           full_name: registerName,
-          phone: registerPhone,
+          phone: normalizedPhone,
+          phone_verified: false,
         }
       );
 
-      if (error) throw error;
+      if (data?.user?.id) {
+        await syncGuestAddressesToUser(supabase, data.user.id);
 
-      if (signUpData?.user?.id) {
-        await syncGuestAddressesToUser(supabase, signUpData.user.id);
+        await supabase.from("profiles").insert({
+          id: data.user.id,
+          full_name: registerName,
+          phone: normalizedPhone,
+          phone_verified: false,
+        });
       }
 
-      setLoading(false);
-      setSuccessType("verify_or_login");
+      setSuccessType("auth");
       setStep("success");
     } catch (e) {
-      setLoading(false);
       setFormError(getAuthErrorMessage(e));
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
-    if (!loginEmail) {
+    if (loading) return;
+
+    setFormError("");
+
+    if (!loginValue) {
       setFormError("Email je obavezan.");
       return;
     }
 
-    setFormError("");
+    if (!isValidEmail(loginValue)) {
+      setFormError("Unesite ispravnu email adresu.");
+      return;
+    }
+
     setLoading(true);
-    setSuccessType("forgot");
-    setStep("success");
 
     try {
-      await resetPassword(loginEmail);
+      await resetPassword(loginValue);
+      setSuccessType("forgot");
+      setStep("success");
+    } catch (e) {
+      setFormError(getAuthErrorMessage(e));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendVerification = async () => {
-    if (loading || resendCooldown > 0 || !email) return;
-
-    const until = Number(localStorage.getItem(resendKey) || 0);
-    if (until > Date.now()) {
-      setResendCooldown(Math.ceil((until - Date.now()) / 1000));
+  const handleSubmit = async () => {
+    if (mode === "login") {
+      await handleLoginSubmit();
       return;
     }
 
-    setLoading(true);
-
-    try {
-      await resendVerificationEmail(email);
-      const next = Date.now() + 60000;
-      localStorage.setItem(resendKey, next.toString());
-      setResendCooldown(60);
-      setFormError("");
-      setResendSuccess(
-        "Email za potvrdu je ponovo poslat. Proverite inbox (i spam)."
-      );
-    } catch (e) {
-      setFormError(getAuthErrorMessage(e));
-    } finally {
-      setLoading(false);
+    if (mode === "register") {
+      await handleRegisterSubmit();
+      return;
     }
   };
 
@@ -329,40 +328,55 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     state: {
       step,
       successType,
+
+      loginMethod,
       loginStep,
-      loginEmail,
+      loginValue,
       loginPassword,
+      loginTouched,
+
+      registerStep,
       registerName,
       registerPhone,
       registerEmail,
       registerPassword,
-      loginTouched,
       registerTouched,
+
+      selectedCountry,
+
       loading,
       showPassword,
       formError,
-      resendCooldown,
-      resendSuccess,
-      needsEmailVerification,
     },
     setters: {
-      setLoginEmail,
+      setStep,
+      setSuccessType,
+
+      setLoginMethod,
+      setLoginStep,
+      setLoginValue,
       setLoginPassword,
+      setLoginTouched,
+
+      setRegisterStep,
       setRegisterName,
       setRegisterPhone,
       setRegisterEmail,
       setRegisterPassword,
-      setLoginTouched,
       setRegisterTouched,
+
+      setSelectedCountry,
+
+      setLoading,
       setShowPassword,
-      setStep,
+      setFormError,
     },
     handlers: {
       switchMode,
       handleLoginNext,
       handleSubmit,
+      handleRegisterNextStep,
       handleForgotPassword,
-      handleResendVerification,
       handleGoogleLogin,
     },
   };
