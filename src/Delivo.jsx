@@ -3,6 +3,8 @@ import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { AddressProvider } from "./contexts/AddressContext";
 
+import MaintenanceOverlay from "./components/maintenance-overlay/MaintenanceOverlay";
+
 import "./assets/styles/colors.css";
 
 import AppLayout from "./components/layout/AppLayout";
@@ -101,6 +103,13 @@ function Delivo() {
       listener.subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const hasAccess =
+    localStorage.getItem("delivo_access_granted") === "true";
+
+  if (!hasAccess) {
+    return <MaintenanceOverlay />;
+  }
 
   if (!auth.ready) return null;
 

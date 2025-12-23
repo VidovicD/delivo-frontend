@@ -1,0 +1,203 @@
+.maintenance-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--brand-primary);
+  z-index: 2147483647;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.maintenance-background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.maintenance-modal {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 60px;
+
+  padding: 32px;
+  text-align: center;
+}
+
+/* TOP */
+.maintenance-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.maintenance-logo {
+  width: 160px;
+  padding-bottom: 10px;
+}
+
+.maintenance-top h1 {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--brand-accent);
+}
+
+.maintenance-text {
+  font-size: 18px;
+  max-width: 600px;
+  margin: 0;
+  color: var(--brand-accent);
+}
+
+/* CENTER */
+.maintenance-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.maintenance-timer {
+  display: flex;
+  gap: 18px;
+  color: var(--brand-accent);
+}
+
+.maintenance-timer div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.maintenance-timer strong {
+  font-size: 62px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.maintenance-timer span {
+  font-size: 16px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.maintenance-date {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--brand-accent);
+}
+
+/* BOTTOM */
+.maintenance-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.maintenance-bottom input {
+  width: 250px;
+  height: 42px;
+  padding: 0 14px;
+  text-align: center;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+
+  background: var(--brand-neutral);
+  color: rgba(20, 33, 39, 0.7);
+
+  font-size: 14px;
+}
+
+.maintenance-bottom input::placeholder {
+  opacity: 0.5;
+}
+
+.maintenance-bottom input:focus {
+  outline: none;
+  border: 2px solid var(--brand-accent);
+}
+
+.maintenance-bottom input {
+  box-sizing: border-box;
+}
+
+.maintenance-bottom input::placeholder {
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.maintenance-bottom input:focus::placeholder {
+  opacity: 0;
+}
+
+.maintenance-bottom input {
+  caret-color: transparent;
+}
+
+@media (max-width: 480px) {
+  .maintenance-modal {
+    gap: 36px;
+    padding: 24px 16px;
+  }
+
+  /* TOP */
+  .maintenance-logo {
+    width: 120px;
+    padding-bottom: 6px;
+  }
+
+  .maintenance-top h1 {
+    font-size: 32px;
+    line-height: 1.25;
+    max-width: 95%;
+  }
+
+  .maintenance-text {
+    font-size: 16px;
+    max-width: 95%;
+  }
+
+  /* CENTER */
+  .maintenance-timer {
+    gap: 14px;
+  }
+
+  .maintenance-timer strong {
+    font-size: 42px;
+  }
+
+  .maintenance-timer span {
+    font-size: 12px;
+  }
+
+  .maintenance-date {
+    font-size: 13px;
+  }
+
+  .maintenance-bottom input {
+    width: 220px;
+    height: 40px;
+    font-size: 14px;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
