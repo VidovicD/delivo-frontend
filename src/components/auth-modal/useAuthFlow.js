@@ -47,6 +47,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [formError, setFormError] = useState("");
 
   const [loginTouched, setLoginTouched] = useState(false);
+  const [registerTouched, setRegisterTouched] = useState(false);
 
   const resetLoginState = () => {
     setLoginMethod("phone");
@@ -66,6 +67,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setVerifiedPhone(null);
     setOtpExpiresAt(null);
     setOtpAttemptsLeft(5);
+    setRegisterTouched(false);
     setSelectedCountry(COUNTRIES[0]);
   };
 
@@ -153,6 +155,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleRegisterNextStep = async () => {
     if (loading) return;
+    setRegisterTouched(true);
     setFormError("");
 
     const normalizedPhone = normalizePhone(
@@ -179,6 +182,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       await sendOtp(normalizedPhone);
       setVerifiedPhone(normalizedPhone);
       setRegisterStep("otp");
+      setRegisterTouched(false);
     } catch (e) {
       setFormError(getAuthErrorMessage(e));
     } finally {
@@ -188,6 +192,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleVerifyOtp = async () => {
     if (loading) return;
+    setRegisterTouched(true);
     setFormError("");
 
     if (!registerOtp) {
@@ -203,6 +208,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
       if (data?.verified) {
         setRegisterStep("details");
+        setRegisterTouched(false);
         requestAnimationFrame(() => nameRef.current?.focus());
       }
     } catch {
@@ -215,6 +221,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleRegisterSubmit = async () => {
     if (loading) return;
+    setRegisterTouched(true);
     setFormError("");
 
     if (registerStep === "phone") {
@@ -305,6 +312,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       loginValue,
       loginPassword,
       loginTouched,
+      registerTouched,
       registerStep,
       registerName,
       registerPhone,
@@ -328,6 +336,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setRegisterEmail,
       setRegisterPassword,
       setRegisterOtp,
+      setRegisterTouched,
       setSelectedCountry,
       setShowPassword,
       setFormError,
