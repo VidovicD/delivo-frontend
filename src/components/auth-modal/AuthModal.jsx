@@ -34,7 +34,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     registerOtp,
     otpExpiresAt,
     otpAttemptsLeft,
-    registerTouched,
 
     selectedCountry,
 
@@ -47,9 +46,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     <div
       className="auth-overlay"
       onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
@@ -135,7 +132,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 isValidEmail={isValidEmail}
                 passwordRef={refs.passwordRef}
                 onNext={handlers.handleLoginNext}
-                onSubmit={handlers.handleSubmit}
+                onSubmit={handlers.handleLoginSubmit}
                 onBack={() => handlers.switchMode("login")}
                 showPassword={showPassword}
                 setShowPassword={setters.setShowPassword}
@@ -152,16 +149,11 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 registerOtp={registerOtp}
                 otpExpiresAt={otpExpiresAt}
                 otpAttemptsLeft={otpAttemptsLeft}
-
                 setRegisterName={setters.setRegisterName}
                 setRegisterPhone={setters.setRegisterPhone}
                 setRegisterEmail={setters.setRegisterEmail}
                 setRegisterPassword={setters.setRegisterPassword}
                 setRegisterOtp={setters.setRegisterOtp}
-
-                registerTouched={registerTouched}
-                setRegisterTouched={setters.setRegisterTouched}
-
                 loading={loading}
                 formError={formError}
                 isValidEmail={isValidEmail}
