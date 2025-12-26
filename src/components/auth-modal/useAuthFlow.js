@@ -35,6 +35,10 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
+  const [registerOtp, setRegisterOtp] = useState("");
+  const [otpExpiresAt, setOtpExpiresAt] = useState(null);
+  const [otpAttemptsLeft, setOtpAttemptsLeft] = useState(5);
+  const [verifiedPhone, setVerifiedPhone] = useState(null);
 
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
 
@@ -59,6 +63,10 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setRegisterPhone("");
     setRegisterEmail("");
     setRegisterPassword("");
+    setRegisterOtp("");
+    setVerifiedPhone(null);
+    setOtpExpiresAt(null);
+    setOtpAttemptsLeft(5);
     setRegisterTouched(false);
     setSelectedCountry(COUNTRIES[0]);
   };
@@ -69,10 +77,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setFormError("");
     setShowPassword(false);
     setLoading(false);
-
     resetLoginState();
     resetRegisterState();
-
     onSwitch(nextMode);
   };
 
@@ -80,28 +86,12 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
-
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  useEffect(() => {
-    if (step !== "auth") return;
-
-    if (mode === "login") {
-      if (loginStep === "value") emailRef.current?.focus();
-      if (loginStep === "password") passwordRef.current?.focus();
-    }
-
-    if (mode === "register") {
-      if (registerStep === "phone") phoneRef.current?.focus();
-      if (registerStep === "details") nameRef.current?.focus();
-    }
-  }, [mode, step, loginStep, registerStep]);
-
   const handleGoogleLogin = async () => {
     if (loading) return;
-
     try {
       setFormError("");
       setLoading(true);
@@ -114,7 +104,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleLoginNext = async () => {
     if (loading) return;
-
     setLoginTouched(true);
     setFormError("");
 
@@ -123,12 +112,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
-    if (!loginValue) {
-      setFormError("Email je obavezan.");
-      return;
-    }
-
-    if (!isValidEmail(loginValue)) {
+    if (!loginValue || !isValidEmail(loginValue)) {
       setFormError("Unesite ispravnu email adresu.");
       return;
     }
@@ -140,7 +124,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleLoginSubmit = async () => {
     if (loading) return;
-
     setLoginTouched(true);
     setFormError("");
 
@@ -150,7 +133,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     }
 
     setLoading(true);
-
     try {
       await loginWithPassword(loginValue, loginPassword);
       setSuccessType("auth");
@@ -163,16 +145,18 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     }
   };
 
+  const sendOtp = async (phone) => {
+    await supabase.functions.invoke("send-phone-otp", {
+      body: { phone },
+    });
+    setOtpExpiresAt(Date.now() + 5 * 60 * 1000);
+    setOtpAttemptsLeft(5);
+  };
+
   const handleRegisterNextStep = async () => {
     if (loading) return;
-
     setRegisterTouched(true);
     setFormError("");
-
-    if (!registerPhone) {
-      setFormError("Broj telefona je obavezan.");
-      return;
-    }
 
     const normalizedPhone = normalizePhone(
       registerPhone,
@@ -185,22 +169,19 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     }
 
     setLoading(true);
-
     try {
-      const { data, error } = await supabase.functions.invoke("check-phone", {
+      const { data } = await supabase.functions.invoke("check-phone", {
         body: { phone: normalizedPhone },
       });
 
-      if (error) throw error;
-
       if (data?.exists) {
-        setFormError("Već postoji nalog sa ovim brojem telefona. Prijavite se.");
+        setFormError("Već postoji nalog sa ovim brojem telefona.");
         return;
       }
 
-      setRegisterTouched(false);
-      setRegisterStep("details");
-      requestAnimationFrame(() => nameRef.current?.focus());
+      await sendOtp(normalizedPhone);
+      setVerifiedPhone(normalizedPhone);
+      setRegisterStep("otp");
     } catch (e) {
       setFormError(getAuthErrorMessage(e));
     } finally {
@@ -208,9 +189,35 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     }
   };
 
+  const handleVerifyOtp = async () => {
+    if (loading) return;
+    setFormError("");
+
+    if (!registerOtp) {
+      setFormError("Unesite kod.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke("verify-phone-otp", {
+        body: { phone: verifiedPhone, code: registerOtp },
+      });
+
+      if (data?.verified) {
+        setRegisterStep("details");
+        requestAnimationFrame(() => nameRef.current?.focus());
+      }
+    } catch (e) {
+      setOtpAttemptsLeft((a) => a - 1);
+      setFormError("Pogrešan kod.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRegisterSubmit = async () => {
     if (loading) return;
-
     setRegisterTouched(true);
     setFormError("");
 
@@ -219,8 +226,13 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
+    if (registerStep === "otp") {
+      await handleVerifyOtp();
+      return;
+    }
+
     if (!registerName || !registerEmail || !registerPassword) {
-      setFormError("Popunite sva obavezna polja.");
+      setFormError("Popunite sva polja.");
       return;
     }
 
@@ -229,42 +241,25 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
-    if (registerPassword.length < 6) {
-      setFormError("Lozinka mora imati najmanje 6 karaktera.");
-      return;
-    }
-
-    const normalizedPhone = normalizePhone(
-      registerPhone,
-      selectedCountry.dialCode
-    );
-
-    if (!isValidPhone(normalizedPhone)) {
-      setFormError("Unesite ispravan broj telefona.");
-      return;
-    }
-
     setLoading(true);
-
     try {
       const data = await registerWithPassword(
         registerEmail,
         registerPassword,
         {
           full_name: registerName,
-          phone: normalizedPhone,
-          phone_verified: false,
+          phone: verifiedPhone,
+          phone_verified: true,
         }
       );
 
       if (data?.user?.id) {
         await syncGuestAddressesToUser(supabase, data.user.id);
-
         await supabase.from("profiles").insert({
           id: data.user.id,
           full_name: registerName,
-          phone: normalizedPhone,
-          phone_verified: false,
+          phone: verifiedPhone,
+          phone_verified: true,
         });
       }
 
@@ -279,21 +274,14 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleForgotPassword = async () => {
     if (loading) return;
-
     setFormError("");
 
-    if (!loginValue) {
-      setFormError("Email je obavezan.");
-      return;
-    }
-
-    if (!isValidEmail(loginValue)) {
+    if (!loginValue || !isValidEmail(loginValue)) {
       setFormError("Unesite ispravnu email adresu.");
       return;
     }
 
     setLoading(true);
-
     try {
       await resetPassword(loginValue);
       setSuccessType("forgot");
@@ -302,18 +290,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setFormError(getAuthErrorMessage(e));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (mode === "login") {
-      await handleLoginSubmit();
-      return;
-    }
-
-    if (mode === "register") {
-      await handleRegisterSubmit();
-      return;
     }
   };
 
@@ -328,54 +304,41 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     state: {
       step,
       successType,
-
       loginMethod,
       loginStep,
       loginValue,
       loginPassword,
       loginTouched,
-
       registerStep,
       registerName,
       registerPhone,
       registerEmail,
       registerPassword,
-      registerTouched,
-
+      registerOtp,
+      otpExpiresAt,
+      otpAttemptsLeft,
       selectedCountry,
-
       loading,
       showPassword,
       formError,
     },
     setters: {
-      setStep,
-      setSuccessType,
-
-      setLoginMethod,
-      setLoginStep,
-      setLoginValue,
-      setLoginPassword,
-      setLoginTouched,
-
-      setRegisterStep,
-      setRegisterName,
       setRegisterPhone,
+      setRegisterName,
       setRegisterEmail,
       setRegisterPassword,
+      setRegisterOtp,
       setRegisterTouched,
-
       setSelectedCountry,
-
-      setLoading,
       setShowPassword,
       setFormError,
     },
     handlers: {
       switchMode,
       handleLoginNext,
-      handleSubmit,
       handleRegisterNextStep,
+      handleVerifyOtp,
+      handleSubmit: handleRegisterSubmit,
       handleForgotPassword,
       handleGoogleLogin,
     },

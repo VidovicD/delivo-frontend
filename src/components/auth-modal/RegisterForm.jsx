@@ -8,10 +8,12 @@ function RegisterForm({
   registerPhone,
   registerEmail,
   registerPassword,
+  registerOtp,
   setRegisterName,
   setRegisterPhone,
   setRegisterEmail,
   setRegisterPassword,
+  setRegisterOtp,
   registerTouched,
   setRegisterTouched,
   loading,
@@ -26,8 +28,13 @@ function RegisterForm({
   onSubmit,
   selectedCountry,
   setSelectedCountry,
+  otpExpiresAt,
+  otpAttemptsLeft,
 }) {
   const country = selectedCountry || COUNTRIES[0];
+  const minutesLeft = otpExpiresAt
+    ? Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 60000))
+    : 0;
 
   return (
     <div className="auth-form">
@@ -76,6 +83,46 @@ function RegisterForm({
             disabled={loading}
           >
             Nastavi
+          </button>
+
+          {formError && <div className="error-text">{formError}</div>}
+        </>
+      )}
+
+      {registerStep === "otp" && (
+        <>
+          <p className="auth-helper-text">
+            Poslat je kod na broj <strong>{registerPhone}</strong>
+          </p>
+
+          <p className="auth-helper-text">
+            Kod važi još {minutesLeft} min · Preostali pokušaji:{" "}
+            {otpAttemptsLeft}
+          </p>
+
+          <div className="form-field">
+            <label>Verifikacioni kod</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={registerOtp}
+              onChange={(e) => {
+                setRegisterOtp(e.target.value);
+                setRegisterTouched(false);
+              }}
+              className={
+                registerTouched && !registerOtp ? "error" : ""
+              }
+            />
+          </div>
+
+          <button
+            className="auth-submit"
+            type="button"
+            onClick={onSubmit}
+            disabled={loading}
+          >
+            Potvrdi kod
           </button>
 
           {formError && <div className="error-text">{formError}</div>}

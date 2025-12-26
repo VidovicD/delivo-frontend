@@ -31,6 +31,9 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     registerPhone,
     registerEmail,
     registerPassword,
+    registerOtp,
+    otpExpiresAt,
+    otpAttemptsLeft,
     registerTouched,
 
     selectedCountry,
@@ -146,12 +149,19 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 registerPhone={registerPhone}
                 registerEmail={registerEmail}
                 registerPassword={registerPassword}
+                registerOtp={registerOtp}
+                otpExpiresAt={otpExpiresAt}
+                otpAttemptsLeft={otpAttemptsLeft}
+
                 setRegisterName={setters.setRegisterName}
                 setRegisterPhone={setters.setRegisterPhone}
                 setRegisterEmail={setters.setRegisterEmail}
                 setRegisterPassword={setters.setRegisterPassword}
+                setRegisterOtp={setters.setRegisterOtp}
+
                 registerTouched={registerTouched}
                 setRegisterTouched={setters.setRegisterTouched}
+
                 loading={loading}
                 formError={formError}
                 isValidEmail={isValidEmail}
