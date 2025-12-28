@@ -10,7 +10,7 @@ import FloatingIcons from "../floating-icons/FloatingIcons";
 
 const ACCESS_KEY = "delivo_access_granted";
 const ACCESS_PASSWORD = "260424";
-const TARGET_DATE = new Date("2026-04-01T00:00:00");
+const TARGET_DATE = new Date("2026-07-01T00:00:00");
 
 function MaintenanceOverlay() {
   const [password, setPassword] = useState("");
@@ -68,7 +68,7 @@ function MaintenanceOverlay() {
         <div className="maintenance-top">
           <img src={logo} alt="Delivo logo" className="maintenance-logo" />
 
-          <h1>Delivo uskoro stiže u Novi Sad!</h1>
+          <h1><strong>DELIVO</strong> uskoro stiže u <strong>NOVI SAD!</strong></h1>
 
           <p className="maintenance-text">
             Trenutno završavamo tehničke i operativne pripreme kako bismo
@@ -97,7 +97,7 @@ function MaintenanceOverlay() {
           </div>
 
           <p className="maintenance-date">
-            Početak rada: 1. april 2026.
+            Početak rada: 1. jul 2026.
           </p>
         </div>
 
