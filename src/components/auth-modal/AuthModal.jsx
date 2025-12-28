@@ -24,6 +24,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     loginStep,
     loginValue,
     loginPassword,
+    loginOtp,
     loginTouched,
 
     registerTouched,
@@ -124,8 +125,10 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 loginStep={loginStep}
                 loginValue={loginValue}
                 loginPassword={loginPassword}
+                loginOtp={loginOtp}
                 setLoginValue={setters.setLoginValue}
                 setLoginPassword={setters.setLoginPassword}
+                setLoginOtp={setters.setLoginOtp}
                 loginTouched={loginTouched}
                 setLoginTouched={setters.setLoginTouched}
                 loading={loading}
@@ -134,9 +137,11 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 passwordRef={refs.passwordRef}
                 onNext={handlers.handleLoginNext}
                 onSubmit={handlers.handleLoginSubmit}
-                onBack={() => handlers.switchMode("login")}
+                onBack={handlers.handleLoginBack}
                 showPassword={showPassword}
                 setShowPassword={setters.setShowPassword}
+                selectedCountry={selectedCountry}
+                setSelectedCountry={setters.setSelectedCountry}
               />
             )}
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
+import { COUNTRIES } from "../../utils/countries";
 
 function LoginForm({
   loginMethod,
@@ -7,8 +8,10 @@ function LoginForm({
   loginStep,
   loginValue,
   loginPassword,
+  loginOtp,
   setLoginValue,
   setLoginPassword,
+  setLoginOtp,
   loginTouched,
   setLoginTouched,
   loading,
@@ -20,6 +23,8 @@ function LoginForm({
   onBack,
   showPassword,
   setShowPassword,
+  selectedCountry,
+  setSelectedCountry,
 }) {
   const isPhone = loginMethod === "phone";
   const isEmail = loginMethod === "email";
@@ -28,43 +33,68 @@ function LoginForm({
     <div className="auth-form">
       {loginStep === "value" && (
         <>
-          <div className="form-field">
-            <label>{isPhone ? "Broj telefona" : "Email adresa"}</label>
-
-            <input
-              type="text"
-              value={loginValue}
-              disabled={isPhone}
-              placeholder={
-                isPhone ? "Uskoro dostupno" : "email@primer.com"
-              }
-              onChange={(e) => {
-                setLoginValue(e.target.value);
-                setLoginTouched(false);
-              }}
-              className={
-                isPhone
-                  ? "disabled"
-                  : loginTouched &&
-                    (!loginValue ||
-                      (isEmail && !isValidEmail(loginValue)))
-                  ? "error"
-                  : ""
-              }
-            />
-          </div>
-
           {isPhone && (
-            <div className="auth-helper-text">
-              Prijava preko broja telefona uskoro će biti dostupna.
+            <div className="form-field">
+              <label>Broj telefona</label>
+
+              <div className="phone-field">
+                <select
+                  className="phone-country"
+                  value={selectedCountry.code}
+                  onChange={(e) => {
+                    const country = COUNTRIES.find(
+                      (c) => c.code === e.target.value
+                    );
+                    if (country) setSelectedCountry(country);
+                  }}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.dialCode}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  className="phone-input"
+                  type="tel"
+                  value={loginValue}
+                  placeholder={selectedCountry.placeholder}
+                  onChange={(e) => {
+                    setLoginValue(e.target.value);
+                    setLoginTouched(false);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {isEmail && (
+            <div className="form-field">
+              <label>Email adresa</label>
+              <input
+                type="email"
+                value={loginValue}
+                placeholder="email@primer.com"
+                onChange={(e) => {
+                  setLoginValue(e.target.value);
+                  setLoginTouched(false);
+                }}
+                className={
+                  loginTouched &&
+                  (!loginValue || !isValidEmail(loginValue))
+                    ? "error"
+                    : ""
+                }
+              />
             </div>
           )}
 
           <button
             className="auth-submit"
             type="button"
-            onClick={isEmail ? onNext : undefined}
-            disabled={loading || isPhone}
+            onClick={onNext}
+            disabled={loading}
           >
             Nastavi
           </button>
@@ -79,7 +109,7 @@ function LoginForm({
             }}
           >
             {isPhone
-              ? "Ili se prijavi preko emaila"
+              ? "Prijavi se preko emaila"
               : "Prijavi se preko broja telefona"}
           </button>
         </>
@@ -103,9 +133,7 @@ function LoginForm({
                   setLoginPassword(e.target.value);
                   setLoginTouched(false);
                 }}
-                className={
-                  loginTouched && !loginPassword ? "error" : ""
-                }
+                className={loginTouched && !loginPassword ? "error" : ""}
               />
 
               <button
@@ -117,6 +145,46 @@ function LoginForm({
                 {showPassword ? <EyeOpen /> : <EyeClosed />}
               </button>
             </div>
+          </div>
+
+          <button
+            className="auth-submit"
+            type="button"
+            onClick={onSubmit}
+            disabled={loading}
+          >
+            Prijavi se
+          </button>
+
+          <button
+            type="button"
+            className="auth-link"
+            onClick={onBack}
+            disabled={loading}
+          >
+            Nazad
+          </button>
+        </>
+      )}
+
+      {loginStep === "otp" && (
+        <>
+          <p className="auth-helper-text">
+            Unesite verifikacioni kod poslat na vaš broj
+          </p>
+
+          <div className="form-field">
+            <label>Verifikacioni kod</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={loginOtp}
+              onChange={(e) => {
+                setLoginOtp(e.target.value);
+                setLoginTouched(false);
+              }}
+              className={loginTouched && !loginOtp ? "error" : ""}
+            />
           </div>
 
           <button
