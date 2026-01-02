@@ -35,7 +35,11 @@ function LoginForm({
             <div className="form-field">
               <label>Broj telefona</label>
 
-              <div className="phone-field">
+              <div
+                className={`phone-field ${
+                  loginTouched && !loginValue ? "error" : ""
+                }`}
+              >
                 <div className="phone-country-wrapper">
                   <select
                     className="phone-country"
@@ -63,7 +67,9 @@ function LoginForm({
                 </div>
 
                 <input
-                  className="phone-input"
+                  className={`phone-input ${
+                    loginTouched && !loginValue ? "error" : ""
+                  }`}
                   type="tel"
                   value={loginValue}
                   placeholder={selectedCountry.placeholder}
@@ -100,24 +106,13 @@ function LoginForm({
           <button
             className="auth-submit"
             type="button"
-            onClick={onNext}
+            onClick={() => {
+              setLoginTouched(true);
+              onNext();
+            }}
             disabled={loading}
           >
             Nastavi
-          </button>
-
-          <button
-            type="button"
-            className="auth-link"
-            onClick={() => {
-              setLoginMethod(isPhone ? "email" : "phone");
-              setLoginValue("");
-              setLoginTouched(false);
-            }}
-          >
-            {isPhone
-              ? "Prijavi se preko emaila"
-              : "Prijavi se preko broja telefona"}
           </button>
         </>
       )}

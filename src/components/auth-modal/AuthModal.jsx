@@ -188,14 +188,35 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
             />
 
             {mode === "login" && (
-              <button
-                type="button"
-                className="auth-forgot"
-                disabled={loading}
-                onClick={() => setters.setStep("forgot")}
-              >
-                Zaboravili ste lozinku?
-              </button>
+              <div className="auth-login-actions">
+                {loginStep === "value" && (
+                  <button
+                    type="button"
+                    className="auth-forgot"
+                    disabled={loading}
+                    onClick={() => {
+                      setters.setLoginMethod(
+                        loginMethod === "phone" ? "email" : "phone"
+                      );
+                      setters.setLoginValue("");
+                      setters.setLoginTouched(false);
+                    }}
+                  >
+                    {loginMethod === "phone"
+                      ? "Prijavi se preko emaila"
+                      : "Prijavi se preko broja telefona"}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  className="auth-forgot"
+                  disabled={loading}
+                  onClick={() => setters.setStep("forgot")}
+                >
+                  Zaboravili ste lozinku?
+                </button>
+              </div>
             )}
 
             {mode === "register" && (

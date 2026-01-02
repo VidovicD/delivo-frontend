@@ -43,7 +43,11 @@ function RegisterForm({
           <div className="form-field">
             <label>Broj telefona</label>
 
-            <div className="phone-field">
+            <div
+              className={`phone-field ${
+                registerTouched && !registerPhone ? "error" : ""
+              }`}
+            >
               <div className="phone-country-wrapper">
                 <select
                   className="phone-country"
@@ -72,15 +76,16 @@ function RegisterForm({
 
               <input
                 ref={phoneRef}
+                className={`phone-input ${
+                  registerTouched && !registerPhone ? "error" : ""
+                }`}
                 type="tel"
                 value={registerPhone}
+                placeholder={selectedCountry.placeholder}
                 onChange={(e) => {
                   setRegisterPhone(e.target.value);
                   setRegisterTouched(false);
                 }}
-                className={
-                  registerTouched && !registerPhone ? "error" : ""
-                }
               />
             </div>
           </div>
@@ -88,7 +93,10 @@ function RegisterForm({
           <button
             className="auth-submit"
             type="button"
-            onClick={onNextStep}
+            onClick={() => {
+              setRegisterTouched(true);
+              onNextStep();
+            }}
             disabled={loading}
           >
             Nastavi
@@ -119,16 +127,17 @@ function RegisterForm({
                 setRegisterOtp(e.target.value);
                 setRegisterTouched(false);
               }}
-              className={
-                registerTouched && !registerOtp ? "error" : ""
-              }
+              className={registerTouched && !registerOtp ? "error" : ""}
             />
           </div>
 
           <button
             className="auth-submit"
             type="button"
-            onClick={onSubmit}
+            onClick={() => {
+              setRegisterTouched(true);
+              onSubmit();
+            }}
             disabled={loading}
           >
             Potvrdi kod
@@ -150,9 +159,7 @@ function RegisterForm({
                 setRegisterName(e.target.value);
                 setRegisterTouched(false);
               }}
-              className={
-                registerTouched && !registerName ? "error" : ""
-              }
+              className={registerTouched && !registerName ? "error" : ""}
             />
           </div>
 
@@ -205,7 +212,10 @@ function RegisterForm({
           <button
             className="auth-submit"
             type="button"
-            onClick={onSubmit}
+            onClick={() => {
+              setRegisterTouched(true);
+              onSubmit();
+            }}
             disabled={loading}
           >
             Registruj se
