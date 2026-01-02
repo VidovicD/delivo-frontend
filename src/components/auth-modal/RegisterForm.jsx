@@ -48,6 +48,12 @@ function RegisterForm({
                 <select
                   className="phone-country"
                   value={country.code}
+                  onMouseDown={(e) => {
+                    if (document.activeElement === e.target) {
+                      e.preventDefault();
+                      e.target.blur();
+                    }
+                  }}
                   onChange={(e) => {
                     const c = COUNTRIES.find(
                       (x) => x.code === e.target.value

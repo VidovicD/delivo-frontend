@@ -40,6 +40,12 @@ function LoginForm({
                   <select
                     className="phone-country"
                     value={selectedCountry.code}
+                    onMouseDown={(e) => {
+                      if (document.activeElement === e.target) {
+                        e.preventDefault();
+                        e.target.blur();
+                      }
+                    }}
                     onChange={(e) => {
                       const country = COUNTRIES.find(
                         (c) => c.code === e.target.value

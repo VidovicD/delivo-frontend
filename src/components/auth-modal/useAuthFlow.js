@@ -32,7 +32,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [loginOtp, setLoginOtp] = useState("");
   const [loginOtpExpiresAt, setLoginOtpExpiresAt] = useState(null);
   const [loginOtpAttemptsLeft, setLoginOtpAttemptsLeft] = useState(5);
-  const [loginVerifiedPhone, setLoginVerifiedPhone] = useState(null);
 
   const [registerStep, setRegisterStep] = useState("phone");
   const [registerName, setRegisterName] = useState("");
@@ -81,7 +80,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setLoginOtp("");
     setLoginOtpExpiresAt(null);
     setLoginOtpAttemptsLeft(5);
-    setLoginVerifiedPhone(null);
     setLoginTouched(false);
   };
 
@@ -147,7 +145,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setLoginOtp("");
       setLoginOtpExpiresAt(null);
       setLoginOtpAttemptsLeft(5);
-      setLoginVerifiedPhone(null);
       setLoginTouched(false);
       setFormError("");
       setLoginStep("value");
@@ -286,7 +283,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         return;
       }
 
-      setLoginVerifiedPhone(normalizedPhone);
       setLoginOtp("");
       setLoginOtpExpiresAt(null);
       setLoginOtpAttemptsLeft(5);
