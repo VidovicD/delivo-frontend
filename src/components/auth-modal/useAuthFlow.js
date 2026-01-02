@@ -125,6 +125,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setLoading(true);
       await googleOAuth();
     } catch (e) {
+      console.error("GOOGLE LOGIN ERROR:", e);
       setFormError(getAuthErrorMessage(e));
       setLoading(false);
     }
@@ -164,6 +165,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
     if (!deviceId || !trustToken) return null;
 
+    console.log("TRY TRUSTED LOGIN:", { phone, deviceId, trustToken: !!trustToken });
+
     const { data, error } = await supabase.functions.invoke("login-with-phone", {
       body: {
         phone,
@@ -172,11 +175,62 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       },
     });
 
-    if (error) return null;
+    if (error) {
+      console.error("TRUSTED LOGIN ERROR:", error);
+      return null;
+    }
 
-    if (data?.action_link) return data.action_link;
+    const payload = data?.data;
+
+    if (payload?.action_link) {
+      console.log("TRUSTED LOGIN ACTION LINK RECEIVED");
+      return payload.action_link;
+    }
 
     return null;
+  };
+
+  const loginPhoneDirect = async (normalizedPhone) => {
+    const deviceId = getDeviceId();
+
+    console.log("LOGIN PHONE DIRECT:", {
+      phone: normalizedPhone,
+      device_id: deviceId,
+      issue_trust: true,
+    });
+
+    const { data: loginData, error: loginError } =
+      await supabase.functions.invoke("login-with-phone", {
+        body: {
+          phone: normalizedPhone,
+          device_id: deviceId,
+          trust_token: getTrustToken(),
+          issue_trust: true,
+        },
+      });
+
+    if (loginError) {
+      console.error("LOGIN DIRECT ERROR:", loginError);
+      throw loginError;
+    }
+
+    console.log("LOGIN DIRECT RESPONSE:", {
+      has_action_link: !!loginData?.action_link,
+      has_trust_token: !!loginData?.trust_token,
+    });
+
+    const payload = loginData?.data;
+
+    if (payload?.trust_token) {
+      setTrustToken(payload.trust_token);
+    }
+
+    if (!payload?.action_link) {
+      throw new Error("Missing action_link");
+    }
+
+    window.location.href = payload.action_link;
+    return;
   };
 
   const handleLoginNext = async () => {
@@ -201,6 +255,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       selectedCountry.dialCode
     );
 
+    console.log("LOGIN NEXT NORMALIZED PHONE:", normalizedPhone);
+
     if (!isValidPhone(normalizedPhone)) {
       setFormError("Unesite ispravan broj telefona.");
       return;
@@ -210,7 +266,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     try {
       const trustedLink = await tryTrustedLogin(normalizedPhone);
       if (trustedLink) {
-        window.location.assign(trustedLink);
+        console.log("REDIRECT TRUSTED LINK");
+        window.location.href = trustedLink;
         return;
       }
 
@@ -219,38 +276,33 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
           body: { phone: normalizedPhone },
         });
 
-      if (existsError) throw existsError;
+      if (existsError) {
+        console.error("CHECK PHONE ERROR:", existsError);
+        throw existsError;
+      }
 
       if (!existsData?.exists) {
         setFormError("Ne postoji nalog sa ovim brojem telefona.");
         return;
       }
 
-      const { error: sendError } = await supabase.functions.invoke(
-        "send-phone-otp",
-        {
-          body: { phone: normalizedPhone },
-        }
-      );
-
-      if (sendError) throw sendError;
-
       setLoginVerifiedPhone(normalizedPhone);
       setLoginOtp("");
-      setLoginOtpExpiresAt(Date.now() + 5 * 60 * 1000);
+      setLoginOtpExpiresAt(null);
       setLoginOtpAttemptsLeft(5);
       setLoginTouched(false);
-      setLoginStep("otp");
+      setLoginStep("value");
+
+      await loginPhoneDirect(normalizedPhone);
+      return;
     } catch (e) {
+      console.error("LOGIN NEXT ERROR:", e);
       const msg = (e?.message || "").toLowerCase();
-      if (
-        e?.status === 429 ||
-        msg.includes("otp already sent") ||
-        msg.includes("too many")
-      ) {
-        setFormError(
-          "Kod je već poslat. Sačekajte malo ili pokušajte ponovo kasnije."
-        );
+
+      if (e?.status === 429 || msg.includes("too many")) {
+        setFormError("Previše pokušaja. Sačekajte minut i pokušajte ponovo.");
+      } else if (e?.status === 401) {
+        setFormError("Prijava nije uspela. Pokušajte ponovo.");
       } else {
         setFormError(getAuthErrorMessage(e));
       }
@@ -277,6 +329,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         setStep("success");
         setTimeout(() => onSuccess?.(), 600);
       } catch (e) {
+        console.error("LOGIN EMAIL ERROR:", e);
         setFormError(getAuthErrorMessage(e));
       } finally {
         setLoading(false);
@@ -284,82 +337,52 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
-    if (!loginVerifiedPhone) {
-      setFormError("Unesite broj telefona ponovo.");
-      setLoginStep("value");
-      return;
-    }
+    const normalizedPhone = normalizePhone(
+      loginValue,
+      selectedCountry.dialCode
+    );
 
-    if (!loginOtp) {
-      setFormError("Unesite kod.");
-      return;
-    }
+    console.log("LOGIN SUBMIT NORMALIZED PHONE:", normalizedPhone);
 
-    if (loginOtpExpiresAt && Date.now() > loginOtpExpiresAt) {
-      setFormError("Kod je istekao. Zatražite novi kod.");
+    if (!isValidPhone(normalizedPhone)) {
+      setFormError("Unesite ispravan broj telefona.");
       return;
     }
 
     setLoading(true);
     try {
-      const { data: verifyData, error: verifyError } =
-        await supabase.functions.invoke("verify-phone-otp", {
-          body: { phone: loginVerifiedPhone, code: loginOtp },
-        });
-
-      if (verifyError) throw verifyError;
-
-      if (!verifyData?.verified) {
-        setLoginOtpAttemptsLeft((a) => Math.max(0, a - 1));
-        setFormError("Pogrešan kod.");
+      const trustedLink = await tryTrustedLogin(normalizedPhone);
+      if (trustedLink) {
+        console.log("REDIRECT TRUSTED LINK");
+        window.location.href = trustedLink;
         return;
       }
 
-      const deviceId = getDeviceId();
-
-      const { data: loginData, error: loginError } =
-        await supabase.functions.invoke("login-with-phone", {
-          body: {
-            phone: loginVerifiedPhone,
-            device_id: deviceId,
-            trust_token: getTrustToken(),
-            issue_trust: true,
-          },
+      const { data: existsData, error: existsError } =
+        await supabase.functions.invoke("check-phone", {
+          body: { phone: normalizedPhone },
         });
 
-      if (loginError) throw loginError;
-
-      if (loginData?.trust_token) {
-        setTrustToken(loginData.trust_token);
+      if (existsError) {
+        console.error("CHECK PHONE ERROR:", existsError);
+        throw existsError;
       }
 
-      if (!loginData?.action_link) {
-        setFormError("Došlo je do greške. Pokušajte ponovo.");
+      if (!existsData?.exists) {
+        setFormError("Ne postoji nalog sa ovim brojem telefona.");
         return;
       }
 
-      window.location.assign(loginData.action_link);
+      await loginPhoneDirect(normalizedPhone);
+      return;
     } catch (e) {
+      console.error("LOGIN SUBMIT ERROR:", e);
       const msg = (e?.message || "").toLowerCase();
 
       if (e?.status === 429 || msg.includes("too many")) {
         setFormError("Previše pokušaja. Sačekajte minut i pokušajte ponovo.");
-      } else if (msg.includes("expired")) {
-        setFormError("Kod je istekao. Zatražite novi kod.");
       } else if (e?.status === 401) {
-        // ✅ FIX: 401 iz login-with-phone NIJE "pogrešan kod"
-        setFormError(
-          "Prijava nije uspela. Pokušajte ponovo ili zatražite novi kod."
-        );
-      } else if (
-        // ✅ "Pogrešan kod" samo ako se stvarno radi o OTP grešci
-        msg.includes("invalid code") ||
-        msg.includes("invalid otp") ||
-        msg.includes("otp") ||
-        msg.includes("code")
-      ) {
-        setLoginOtpAttemptsLeft((a) => Math.max(0, a - 1));
-        setFormError("Pogrešan kod.");
+        setFormError("Prijava nije uspela. Pokušajte ponovo.");
       } else {
         setFormError(getAuthErrorMessage(e));
       }
@@ -411,6 +434,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setRegisterStep("otp");
       setRegisterTouched(false);
     } catch (e) {
+      console.error("REGISTER NEXT STEP ERROR:", e);
       const msg = (e?.message || "").toLowerCase();
       if (
         e?.status === 429 ||
@@ -464,6 +488,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setOtpAttemptsLeft((a) => Math.max(0, a - 1));
       setFormError("Pogrešan kod.");
     } catch (e) {
+      console.error("VERIFY OTP ERROR:", e);
       const msg = (e?.message || "").toLowerCase();
       if (e?.status === 429 || msg.includes("too many")) {
         setFormError("Previše pokušaja. Sačekajte minut i pokušajte ponovo.");
@@ -525,6 +550,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setSuccessType("verify_or_login");
       setStep("success");
     } catch (e) {
+      console.error("REGISTER SUBMIT ERROR:", e);
       setFormError(getAuthErrorMessage(e));
     } finally {
       setLoading(false);
@@ -546,6 +572,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setSuccessType("forgot");
       setStep("success");
     } catch (e) {
+      console.error("FORGOT PASSWORD ERROR:", e);
       setFormError(getAuthErrorMessage(e));
     } finally {
       setLoading(false);

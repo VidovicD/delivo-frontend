@@ -8,10 +8,8 @@ function LoginForm({
   loginStep,
   loginValue,
   loginPassword,
-  loginOtp,
   setLoginValue,
   setLoginPassword,
-  setLoginOtp,
   loginTouched,
   setLoginTouched,
   loading,
@@ -38,22 +36,25 @@ function LoginForm({
               <label>Broj telefona</label>
 
               <div className="phone-field">
-                <select
-                  className="phone-country"
-                  value={selectedCountry.code}
-                  onChange={(e) => {
-                    const country = COUNTRIES.find(
-                      (c) => c.code === e.target.value
-                    );
-                    if (country) setSelectedCountry(country);
-                  }}
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.flag} {c.dialCode}
-                    </option>
-                  ))}
-                </select>
+                <div className="phone-country-wrapper">
+                  <select
+                    className="phone-country"
+                    value={selectedCountry.code}
+                    onChange={(e) => {
+                      const country = COUNTRIES.find(
+                        (c) => c.code === e.target.value
+                      );
+                      if (country) setSelectedCountry(country);
+                      e.target.blur();
+                    }}
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} +{c.dialCode}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <input
                   className="phone-input"
@@ -145,46 +146,6 @@ function LoginForm({
                 {showPassword ? <EyeOpen /> : <EyeClosed />}
               </button>
             </div>
-          </div>
-
-          <button
-            className="auth-submit"
-            type="button"
-            onClick={onSubmit}
-            disabled={loading}
-          >
-            Prijavi se
-          </button>
-
-          <button
-            type="button"
-            className="auth-link"
-            onClick={onBack}
-            disabled={loading}
-          >
-            Nazad
-          </button>
-        </>
-      )}
-
-      {loginStep === "otp" && (
-        <>
-          <p className="auth-helper-text">
-            Unesite verifikacioni kod poslat na vaš broj
-          </p>
-
-          <div className="form-field">
-            <label>Verifikacioni kod</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={loginOtp}
-              onChange={(e) => {
-                setLoginOtp(e.target.value);
-                setLoginTouched(false);
-              }}
-              className={loginTouched && !loginOtp ? "error" : ""}
-            />
           </div>
 
           <button

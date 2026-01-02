@@ -514,17 +514,48 @@
 }
 
 .phone-country {
-  min-width: 90px;
-  padding: 12px 10px;
+  min-width: 110px;
+  padding: 12px 36px 12px 16px;
 
   border-radius: 10px;
-  background: var(--brand-neutral2);
+  background-color: var(--brand-neutral2);
   border: 1px solid #00000020;
 
   font-size: 14px;
   font-weight: 500;
   color: var(--brand-accent);
   cursor: pointer;
+  text-align: center;
+
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.phone-country-wrapper {
+  position: relative;
+}
+
+.phone-country-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+
+  width: 12px;
+  height: 8px;
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23142127' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.phone-country-wrapper:focus-within::after {
+  transform: translateY(-50%) rotate(180deg);
 }
 
 .phone-country:focus {

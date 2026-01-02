@@ -44,22 +44,25 @@ function RegisterForm({
             <label>Broj telefona</label>
 
             <div className="phone-field">
-              <select
-                className="phone-country"
-                value={country.code}
-                onChange={(e) => {
-                  const c = COUNTRIES.find(
-                    (x) => x.code === e.target.value
-                  );
-                  setSelectedCountry(c);
-                }}
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.flag} +{c.dialCode}
-                  </option>
-                ))}
-              </select>
+              <div className="phone-country-wrapper">
+                <select
+                  className="phone-country"
+                  value={country.code}
+                  onChange={(e) => {
+                    const c = COUNTRIES.find(
+                      (x) => x.code === e.target.value
+                    );
+                    setSelectedCountry(c);
+                    e.target.blur();
+                  }}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} +{c.dialCode}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <input
                 ref={phoneRef}
