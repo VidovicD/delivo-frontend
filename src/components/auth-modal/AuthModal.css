@@ -239,7 +239,6 @@
 }
 
 .auth-login-actions .auth-forgot:first-child {
-  padding-top: 0px;
   padding-bottom: 0px;
 }
 
@@ -328,8 +327,9 @@
 }
 
 .auth-forgot {
-  margin-top: 12px;
-  padding-bottom: 14px;
+  margin: 0px;
+  padding-top: 16px;
+  padding-bottom: 16px;
   background: none;
   border: none;
 

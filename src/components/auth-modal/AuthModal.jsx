@@ -203,8 +203,8 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                     }}
                   >
                     {loginMethod === "phone"
-                      ? "Prijavi se preko emaila"
-                      : "Prijavi se preko broja telefona"}
+                      ? "Prijava putem email adrese"
+                      : "Prijava putem broja telefona"}
                   </button>
                 )}
 
