@@ -76,7 +76,7 @@ export function isPointInDeliveryZone(point) {
     const xj = DELIVERY_ZONE[j][0];
     const yj = DELIVERY_ZONE[j][1];
     const intersect =
-      yi > y !== yj > y &&
+      (yi > y) !== (yj > y) &&
       x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
   }

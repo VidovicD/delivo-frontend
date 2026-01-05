@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAddress } from "../../contexts/AddressContext";
 import { loadGoogleMaps } from "../../utils/loadGoogleMaps";
 import {
@@ -55,41 +55,46 @@ function AddAddressModal({ onClose, initialAddress }) {
     return current === full || current === short;
   }
 
-  function fetchAddressForPosition(next) {
-    if (!geocoderRef.current) return;
-    geocoderRef.current.geocode({ location: next }, (results, status) => {
-      if (status === "OK" && results && results.length > 0) {
-        const usable = results.filter((r) => {
-          const text = (r.formatted_address || "").trim();
-          const displayText = formatAddressDisplay(text);
-          const hasLetters = /[A-Za-z\u0400-\u04FF]/.test(displayText);
-          return hasLetters && !isPlusCodeAddress(text);
-        });
-        const preferred = usable.find((r) => {
-          const types = r.types || [];
-          const locType = r.geometry?.location_type;
-          const isStreet = types.includes("street_address");
-          const isPrecise =
-            locType === "ROOFTOP" || locType === "RANGE_INTERPOLATED";
-          return isStreet && isPrecise;
-        });
-        const chosen = preferred || usable[0];
-        if (!chosen) {
-          setPendingAddress("");
-          setAddressError("Nema validne adrese. Pomeri pin na ulicu.");
-          if (inputRef.current) {
-            inputRef.current.value = "";
+  const fetchAddressForPosition = useCallback(
+    (next) => {
+      if (!geocoderRef.current) return;
+      geocoderRef.current.geocode({ location: next }, (results, status) => {
+        if (status === "OK" && results && results.length > 0) {
+          const usable = results.filter((r) => {
+            const text = (r.formatted_address || "").trim();
+            const displayText = formatAddressDisplay(text);
+            const hasLetters = /[A-Za-z\u0400-\u04FF]/.test(displayText);
+            return hasLetters && !isPlusCodeAddress(text);
+          });
+          const preferred = usable.find((r) => {
+            const types = r.types || [];
+            const locType = r.geometry?.location_type;
+            const isStreet = types.includes("street_address");
+            const isPrecise =
+              locType === "ROOFTOP" || locType === "RANGE_INTERPOLATED";
+            return isStreet && isPrecise;
+          });
+          const chosen = preferred || usable[0];
+          if (!chosen) {
+            setPendingAddress("");
+            setAddressError("Nema validne adrese. Pomeri pin na ulicu.");
+            if (inputRef.current) {
+              inputRef.current.value = "";
+            }
+            return;
           }
-          return;
+          setPendingAddress(chosen.formatted_address);
+          setAddressError("");
+          if (inputRef.current) {
+            inputRef.current.value = formatAddressDisplay(
+              chosen.formatted_address
+            );
+          }
         }
-        setPendingAddress(chosen.formatted_address);
-        setAddressError("");
-        if (inputRef.current) {
-          inputRef.current.value = formatAddressDisplay(chosen.formatted_address);
-        }
-      }
-    });
-  }
+      });
+    },
+    []
+  );
 
   function handleUseMyLocation() {
     if (!navigator.geolocation) {
@@ -330,7 +335,7 @@ function AddAddressModal({ onClose, initialAddress }) {
         polygonRef.current.setPaths(zonePath);
       }
     }
-  }, [mapsReady, pinPosition]);
+  }, [mapsReady, pinPosition, fetchAddressForPosition]);
 
   function handleInput(e) {
     if (!mapsReady) return;
