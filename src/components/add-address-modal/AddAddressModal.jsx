@@ -230,6 +230,14 @@ function AddAddressModal({ onClose, initialAddress }) {
   }, [mapsReady, initialAddress]);
 
   useEffect(() => {
+    if (!mapsReady || initialAddress || pinPosition) return;
+    const center = { lat: 45.251919, lng: 19.836985 };
+    setPinInZone(isPointInDeliveryZone(center));
+    setPinPosition(center);
+    setPinMoved(false);
+  }, [mapsReady, initialAddress, pinPosition]);
+
+  useEffect(() => {
     if (!mapsReady || !mapRef.current || !mapCtorRef.current) return;
 
     const hasPin = !!pinPosition;
@@ -242,9 +250,12 @@ function AddAddressModal({ onClose, initialAddress }) {
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = new mapCtorRef.current(mapRef.current, {
         center,
-        zoom: 16,
+        zoom: 18,
         disableDefaultUI: true,
         zoomControl: true,
+        gestureHandling: "cooperative",
+        keyboardShortcuts: false,
+        clickableIcons: false,
         ...(process.env.REACT_APP_GOOGLE_MAPS_MAP_ID
           ? { mapId: process.env.REACT_APP_GOOGLE_MAPS_MAP_ID }
           : {}),
@@ -293,7 +304,7 @@ function AddAddressModal({ onClose, initialAddress }) {
     } else {
       mapInstanceRef.current.setCenter(center);
       if (hasPin) {
-        mapInstanceRef.current.setZoom(16);
+        mapInstanceRef.current.setZoom(18);
       }
       if (hasPin) {
         if (!markerRef.current && markerCtorRef.current) {
@@ -344,9 +355,6 @@ function AddAddressModal({ onClose, initialAddress }) {
     const value = toLatin(rawValue);
     setAddressError("");
     setPendingAddress("");
-    if (!initialAddress) {
-      setPinPosition(null);
-    }
     setPinInZone(true);
     if (!initialAddress) {
       setPinMoved(false);
