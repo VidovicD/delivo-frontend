@@ -79,6 +79,29 @@ export function saveAddress({ address, lat, lng }) {
   return updated;
 }
 
+export function updateAddress(id, { address, lat, lng }) {
+  const list = getSavedAddresses();
+  const existing = list.find((a) => a.id === id);
+  if (!existing) return list;
+
+  const updatedItem = {
+    ...existing,
+    address,
+    lat,
+    lng,
+    lastUsed: Date.now(),
+  };
+
+  const updated = [
+    updatedItem,
+    ...list.filter((a) => a.id !== id),
+  ];
+
+  localStorage.setItem(GUEST_KEY, JSON.stringify(updated));
+  normalizeGuestAddresses(updated);
+  return updated;
+}
+
 export function setCurrentAddress(id) {
   const list = getSavedAddresses();
   const selected = list.find((a) => a.id === id);
@@ -197,4 +220,22 @@ export async function saveUserAddress(
       },
       { onConflict: "user_id,address" }
     );
+}
+
+export async function updateUserAddress(
+  supabase,
+  userId,
+  id,
+  { address, lat, lng }
+) {
+  await supabase
+    .from("user_addresses")
+    .update({
+      address,
+      lat,
+      lng,
+      last_used: new Date(),
+    })
+    .eq("id", id)
+    .eq("user_id", userId);
 }

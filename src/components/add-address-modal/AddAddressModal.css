@@ -35,9 +35,128 @@
   max-width: 360px;
 }
 
+.aa-map {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aa-map-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand-accent);
+}
+
+.aa-map-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--brand-accent);
+  opacity: 0.7;
+}
+
+.aa-locate {
+  align-self: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #00000020;
+  background: var(--brand-neutral);
+  color: var(--brand-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aa-locate:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.aa-locate--input {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 28px;
+  width: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 16px;
+}
+
+.aa-locate-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.aa-locate-icon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.aa-locate-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+}
+
+.aa-map-frame {
+  width: 100%;
+  height: 220px;
+  border-radius: 16px;
+  border: 1px solid #00000020;
+  overflow: hidden;
+}
+
+.aa-confirm {
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: none;
+  background: var(--brand-accent);
+  color: var(--brand-neutral);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aa-confirm:hover {
+  filter: brightness(0.96);
+}
+
+.aa-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: none;
+}
+
 .aa-input {
   width: 100%;
-  padding: 14px 20px;
+  padding: 14px 44px 14px 20px;
   border-radius: 999px;
   background: var(--brand-neutral);
   border: 1px solid #00000020;
@@ -97,5 +216,13 @@
 
   .aa-input {
     font-size: 16px;
+  }
+
+  .aa-map {
+    max-width: 100%;
+  }
+
+  .aa-map-frame {
+    height: 200px;
   }
 }

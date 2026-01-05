@@ -244,3 +244,22 @@
 .address-picker__delete:hover {
   color: #e74c3c;
 }
+
+.address-picker__edit {
+  border: none;
+  background: none;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-accent);
+  cursor: pointer;
+  opacity: 0.7;
+  position: relative;
+  z-index: 5;
+  pointer-events: auto;
+  text-transform: uppercase;
+}
+
+.address-picker__edit:hover {
+  opacity: 1;
+}

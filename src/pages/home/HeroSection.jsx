@@ -2,6 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAddress } from "../../contexts/AddressContext";
 import { loadGoogleMaps } from "../../utils/loadGoogleMaps";
+import {
+  getNoviSadLocationBias,
+  isAddressSuggestion,
+  isPointInDeliveryZone,
+  matchesNoviSadArea,
+  formatAddressDisplay,
+  toLatin,
+} from "../../utils/addressValidation";
 
 import "./HeroSection.css";
 
@@ -18,9 +26,15 @@ function HeroSection() {
   const { addAddressFromPlace } = useAddress();
 
   const inputRef = useRef(null);
+  const requestRef = useRef(0);
+  const debounceRef = useRef(null);
+  const cacheRef = useRef(new Map());
+  const cacheTtlMs = 5 * 60 * 1000;
 
   const [mapsReady, setMapsReady] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [addressError, setAddressError] = useState("");
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     loadGoogleMaps().then(() => {
@@ -28,25 +42,115 @@ function HeroSection() {
     });
   }, []);
 
-  async function handleInput(e) {
+  function handleInput(e) {
     if (!mapsReady) return;
 
-    const value = e.target.value;
+    const rawValue = e.target.value;
+    const value = toLatin(rawValue);
+    setAddressError("");
 
     if (!value) {
       setSuggestions([]);
+      setLoadingSuggestions(false);
+      return;
+    }
+    if (value.length < 3) {
+      setSuggestions([]);
+      setLoadingSuggestions(false);
       return;
     }
 
-    const { suggestions } =
-      await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
-        {
-          input: value,
-          includedRegionCodes: ["RS"],
-        }
-      );
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
 
-    setSuggestions(suggestions || []);
+    setLoadingSuggestions(true);
+    debounceRef.current = setTimeout(async () => {
+      const baseQuery = matchesNoviSadArea(value)
+        ? value
+        : `${value}, Novi Sad`;
+      const query = baseQuery;
+
+      const cached = cacheRef.current.get(query);
+      if (cached) {
+        if (Date.now() - cached.ts < cacheTtlMs) {
+          setAddressError(
+            cached.value.length ? "" : "Nema rezultata u zoni dostave."
+          );
+          setSuggestions(cached.value);
+          setLoadingSuggestions(false);
+          return;
+        }
+        cacheRef.current.delete(query);
+      }
+
+      const baseRequest = {
+        input: query,
+        includedRegionCodes: ["RS"],
+        locationBias: getNoviSadLocationBias(),
+      };
+
+      const currentRequest = ++requestRef.current;
+
+      async function getFilteredSuggestions(req) {
+        const { suggestions: rawSuggestions } =
+          await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
+            req
+          );
+
+        const candidates = (rawSuggestions || [])
+          .filter((s) => isAddressSuggestion(s))
+          .slice(0, 10);
+
+        const filtered = await Promise.all(
+          candidates.map(async (s) => {
+            try {
+              const place = s.placePrediction.toPlace();
+              await place.fetchFields({ fields: ["location"] });
+              if (!place.location) return null;
+              const inZone = isPointInDeliveryZone({
+                lat: place.location.lat(),
+                lng: place.location.lng(),
+              });
+              return inZone ? s : null;
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        return filtered.filter(Boolean).slice(0, 3);
+      }
+
+      let next = await getFilteredSuggestions(baseRequest);
+
+      if (!next.length && value.length > 4) {
+        const fallbackInput = query.slice(0, -1).trim();
+        if (fallbackInput.length >= 3) {
+          next = await getFilteredSuggestions({
+            ...baseRequest,
+            input: fallbackInput,
+          });
+        }
+      }
+
+      if (!next.length) {
+        const rawInput = value.trim();
+        if (rawInput.length >= 3 && rawInput !== query) {
+          next = await getFilteredSuggestions({
+            ...baseRequest,
+            input: rawInput,
+          });
+        }
+      }
+
+      if (currentRequest === requestRef.current) {
+        cacheRef.current.set(query, { ts: Date.now(), value: next });
+        setAddressError(next.length ? "" : "Nema rezultata u zoni dostave.");
+        setSuggestions(next);
+        setLoadingSuggestions(false);
+      }
+    }, 300);
   }
 
   async function handleSelect(suggestion) {
@@ -55,10 +159,21 @@ function HeroSection() {
     const place = suggestion.placePrediction.toPlace();
 
     await place.fetchFields({
-      fields: ["formattedAddress", "location"],
+      fields: ["formattedAddress", "location", "addressComponents"],
     });
 
     if (!place.formattedAddress || !place.location) return;
+
+    if (
+      !isPointInDeliveryZone({
+        lat: place.location.lat(),
+        lng: place.location.lng(),
+      })
+    ) {
+      setAddressError("Dostava je dostupna samo u zoni dostave.");
+      setSuggestions([]);
+      return;
+    }
 
     await addAddressFromPlace({
       address: place.formattedAddress,
@@ -104,9 +219,25 @@ function HeroSection() {
                     type="button"
                     onClick={() => handleSelect(s)}
                   >
-                    {s.placePrediction.text.text}
+                    {formatAddressDisplay(s.placePrediction.text.text)}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {loadingSuggestions && suggestions.length === 0 && !addressError && (
+              <div className="hero__suggestions">
+                <button type="button" disabled>
+                  Trazim adrese...
+                </button>
+              </div>
+            )}
+
+            {addressError && (
+              <div className="hero__suggestions">
+                <button type="button" disabled>
+                  {addressError}
+                </button>
               </div>
             )}
           </div>
@@ -121,3 +252,4 @@ function HeroSection() {
 }
 
 export default HeroSection;
+

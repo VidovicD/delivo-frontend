@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../supabaseClient";
 import { useAddress } from "../../contexts/AddressContext";
+import { formatAddressDisplay } from "../../utils/addressValidation";
 
 import "./ExplorePage.css";
 
@@ -87,9 +88,9 @@ function ExplorePage() {
             >
               <span
                 className="address-picker__value"
-                title={activeAddress.address}
+                title={formatAddressDisplay(activeAddress.address)}
               >
-                {activeAddress.address}
+                {formatAddressDisplay(activeAddress.address)}
               </span>
               <span className="address-picker__chevron">▾</span>
             </button>
@@ -107,7 +108,21 @@ function ExplorePage() {
                       }}
                     >
                       <strong>{a.label}</strong>
-                      <span>{a.address}</span>
+                      <span>{formatAddressDisplay(a.address)}</span>
+                    </button>
+
+                    <button
+                      className="address-picker__edit"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPicker(false);
+                        window.dispatchEvent(
+                          new CustomEvent("open-edit-address", { detail: a })
+                        );
+                      }}
+                    >
+                      Izmeni
                     </button>
 
                     {savedAddresses.length > 1 && (
@@ -163,7 +178,7 @@ function ExplorePage() {
             <div key={r.id} className="restaurant-card">
               <div className="restaurant-card__name">{r.name}</div>
               <div className="restaurant-card__meta">
-                <span>{r.address}</span>
+                <span>{formatAddressDisplay(r.address)}</span>
                 {r.distanceKm != null && (
                   <span>{r.distanceKm.toFixed(1)} km</span>
                 )}

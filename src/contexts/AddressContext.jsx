@@ -18,7 +18,10 @@ import {
   getActiveAddress,
   saveAddress,
   saveUserAddress,
+  updateAddress,
+  updateUserAddress,
 } from "../utils/deliveryAddress";
+import { isPointInDeliveryZone, toLatin } from "../utils/addressValidation";
 
 const AddressContext = createContext(null);
 
@@ -126,15 +129,21 @@ export function AddressProvider({
   const addAddressFromPlace = useCallback(
     async ({ address, lat, lng }) => {
       if (!address || lat == null || lng == null) return;
+      if (!isPointInDeliveryZone({ lat, lng })) return;
+      const normalizedAddress = toLatin(address);
 
       if (session?.user?.id) {
         await saveUserAddress(supabase, session.user.id, {
-          address,
+          address: normalizedAddress,
           lat,
           lng,
         });
 
-        await touchUserAddress(supabase, session.user.id, address);
+        await touchUserAddress(
+          supabase,
+          session.user.id,
+          normalizedAddress
+        );
 
         const list = await withTimeout(
           loadUserAddresses(supabase, session.user.id),
@@ -145,9 +154,46 @@ export function AddressProvider({
         return;
       }
 
-      const updated = saveAddress({ address, lat, lng });
+      const updated = saveAddress({
+        address: normalizedAddress,
+        lat,
+        lng,
+      });
       setSavedAddresses([...updated]);
       setCurrentAddress(updated[0].id);
+    },
+    [session]
+  );
+
+  const updateAddressById = useCallback(
+    async ({ id, address, lat, lng }) => {
+      if (!id || !address || lat == null || lng == null) return;
+      if (!isPointInDeliveryZone({ lat, lng })) return;
+      const normalizedAddress = toLatin(address);
+
+      if (session?.user?.id) {
+        await updateUserAddress(supabase, session.user.id, id, {
+          address: normalizedAddress,
+          lat,
+          lng,
+        });
+
+        const list = await withTimeout(
+          loadUserAddresses(supabase, session.user.id),
+          5000
+        );
+
+        setSavedAddresses(Array.isArray(list) ? list : []);
+        return;
+      }
+
+      const updated = updateAddress(id, {
+        address: normalizedAddress,
+        lat,
+        lng,
+      });
+      setSavedAddresses([...updated]);
+      setCurrentAddress(id);
     },
     [session]
   );
@@ -187,6 +233,7 @@ export function AddressProvider({
       hasAddress: !!activeAddress,
       setActiveById,
       addAddressFromPlace,
+      updateAddressById,
       deleteAddressById,
     }),
     [
@@ -196,6 +243,7 @@ export function AddressProvider({
       activeAddress,
       setActiveById,
       addAddressFromPlace,
+      updateAddressById,
       deleteAddressById,
     ]
   );

@@ -33,6 +33,7 @@ function Delivo() {
   const [authMode, setAuthMode] = useState("login");
 
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [editAddress, setEditAddress] = useState(null);
 
   const [addressVersion, setAddressVersion] = useState(0);
   const [passwordFlowActive, setPasswordFlowActive] = useState(false);
@@ -41,9 +42,21 @@ function Delivo() {
   const migrationDoneRef = useRef(false);
 
   useEffect(() => {
-    const open = () => setShowAddAddressModal(true);
+    const open = () => {
+      setEditAddress(null);
+      setShowAddAddressModal(true);
+    };
+    const openEdit = (event) => {
+      const detail = event?.detail || null;
+      setEditAddress(detail);
+      setShowAddAddressModal(true);
+    };
     window.addEventListener("open-add-address", open);
-    return () => window.removeEventListener("open-add-address", open);
+    window.addEventListener("open-edit-address", openEdit);
+    return () => {
+      window.removeEventListener("open-add-address", open);
+      window.removeEventListener("open-edit-address", openEdit);
+    };
   }, []);
 
   useEffect(() => {
@@ -143,7 +156,11 @@ function Delivo() {
 
       {layoutLocked && showAddAddressModal && (
         <AddAddressModal
-          onClose={() => setShowAddAddressModal(false)}
+          onClose={() => {
+            setShowAddAddressModal(false);
+            setEditAddress(null);
+          }}
+          initialAddress={editAddress}
         />
       )}
 
