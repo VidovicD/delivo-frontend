@@ -28,7 +28,6 @@ function LoginForm({
             <input
               type="email"
               value={loginValue}
-              placeholder="email@primer.com"
               onChange={(e) => {
                 setLoginValue(e.target.value);
                 setLoginTouched(false);

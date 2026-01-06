@@ -51,7 +51,6 @@ function RegisterForm({
               ref={emailRef}
               type="email"
               value={registerEmail}
-              placeholder="email@primer.com"
               onChange={(e) => {
                 setRegisterEmail(e.target.value);
                 setRegisterTouched(false);
