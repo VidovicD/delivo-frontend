@@ -29,22 +29,8 @@ function RegisterForm({
 
   return (
     <div className="auth-form">
-      {registerStep === "details" && (
+      {registerStep === "email" && (
         <>
-          <div className="form-field">
-            <label>Ime</label>
-            <input
-              ref={nameRef}
-              type="text"
-              value={registerName}
-              onChange={(e) => {
-                setRegisterName(e.target.value);
-                setRegisterTouched(false);
-              }}
-              className={registerTouched && !registerName ? "error" : ""}
-            />
-          </div>
-
           <div className="form-field">
             <label>Email adresa</label>
             <input
@@ -61,6 +47,38 @@ function RegisterForm({
                   ? "error"
                   : ""
               }
+            />
+          </div>
+
+          <button
+            className="auth-submit"
+            type="button"
+            onClick={() => {
+              setRegisterTouched(true);
+              onSubmit();
+            }}
+            disabled={loading}
+          >
+            Nastavi
+          </button>
+
+          {formError && <div className="error-text">{formError}</div>}
+        </>
+      )}
+
+      {registerStep === "details" && (
+        <>
+          <div className="form-field">
+            <label>Ime</label>
+            <input
+              ref={nameRef}
+              type="text"
+              value={registerName}
+              onChange={(e) => {
+                setRegisterName(e.target.value);
+                setRegisterTouched(false);
+              }}
+              className={registerTouched && !registerName ? "error" : ""}
             />
           </div>
 

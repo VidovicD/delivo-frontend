@@ -17,7 +17,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [loginValue, setLoginValue] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
-  const [registerStep, setRegisterStep] = useState("details");
+  const [registerStep, setRegisterStep] = useState("email");
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -33,6 +33,26 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [loginTouched, setLoginTouched] = useState(false);
   const [registerTouched, setRegisterTouched] = useState(false);
 
+  const pendingProfileKey = "delivo_pending_profile";
+  const pendingProfileEmailKey = "delivo_pending_profile_email";
+  const setPendingProfile = (value, email) => {
+    if (value) {
+      localStorage.setItem(pendingProfileKey, "true");
+      if (email) localStorage.setItem(pendingProfileEmailKey, email);
+      return;
+    }
+    localStorage.removeItem(pendingProfileKey);
+    localStorage.removeItem(pendingProfileEmailKey);
+  };
+
+  useEffect(() => {
+    const pending = localStorage.getItem(pendingProfileKey) === "true";
+    if (!pending) return;
+    const pendingEmail = localStorage.getItem(pendingProfileEmailKey);
+    if (pendingEmail) setRegisterEmail(pendingEmail);
+    setRegisterStep("details");
+  }, []);
+
   const resetLoginState = () => {
     setLoginStep("value");
     setLoginValue("");
@@ -41,7 +61,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   };
 
   const resetRegisterState = () => {
-    setRegisterStep("details");
+    setRegisterStep("email");
     setRegisterName("");
     setRegisterEmail("");
     setRegisterPassword("");
@@ -50,6 +70,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setOtpExpiresAt(null);
     setOtpAttemptsLeft(5);
     setRegisterTouched(false);
+    setPendingProfile(false);
   };
 
   const switchMode = (nextMode) => {
@@ -60,6 +81,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setLoading(false);
     resetLoginState();
     resetRegisterState();
+    setPendingProfile(false);
     onSwitch(nextMode);
   };
 
@@ -175,34 +197,10 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       if (error) throw error;
 
       if (data?.session || data?.user) {
-        const { data: userData, error: userError } =
-          await supabase.auth.getUser();
-
-        if (userError || !userData?.user) {
-          setFormError("Potvrdite email.");
-          return;
-        }
-
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: registerPassword,
-          data: {
-            full_name: registerName,
-            password_set: true,
-          },
-        });
-
-        if (updateError) throw updateError;
-
-        await syncGuestAddressesToUser(supabase, userData.user.id);
-
-        await supabase.from("profiles").upsert({
-          id: userData.user.id,
-          full_name: registerName,
-        });
-
-        setSuccessType("auth");
-        setStep("success");
-        setTimeout(() => onSuccess?.(), 600);
+        setPendingProfile(true, registerEmail);
+        setRegisterStep("details");
+        setRegisterTouched(false);
+        requestAnimationFrame(() => nameRef.current?.focus());
         return;
       }
 
@@ -259,49 +257,85 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
-    if (
-      !registerName ||
-      !registerEmail ||
-      !registerPassword ||
-      !registerPasswordConfirm
-    ) {
-      setFormError("Popunite sva polja.");
-      return;
-    }
-
-    if (!isValidEmail(registerEmail)) {
-      setFormError("Email adresa nije validna.");
-      return;
-    }
-
-    if (registerPassword.length < 6) {
-      setFormError("Lozinka mora imati najmanje 6 karaktera.");
-      return;
-    }
-
-    if (registerPassword !== registerPasswordConfirm) {
-      setFormError("Lozinke se ne poklapaju.");
-      return;
-    }
-
     setLoading(true);
     try {
-      const { data: emailData, error: emailError } =
-        await supabase.functions.invoke("check-email", {
-          body: { email: registerEmail },
-        });
+      if (registerStep === "email") {
+        if (!registerEmail) {
+          setFormError("Unesite email adresu.");
+          return;
+        }
 
-      if (emailError) throw emailError;
+        if (!isValidEmail(registerEmail)) {
+          setFormError("Email adresa nije validna.");
+          return;
+        }
 
-      if (emailData?.exists) {
-        setFormError("Vec postoji nalog sa ovom email adresom.");
+        const { data: emailData, error: emailError } =
+          await supabase.functions.invoke("check-email", {
+            body: { email: registerEmail },
+          });
+
+        if (emailError) throw emailError;
+
+        if (emailData?.exists) {
+          setFormError("Vec postoji nalog sa ovom email adresom.");
+          return;
+        }
+
+        await sendRegisterOtp(registerEmail);
+        setRegisterStep("otp");
+        setRegisterTouched(false);
         return;
       }
 
-      await sendRegisterOtp(registerEmail);
-      setRegisterStep("otp");
-      setRegisterTouched(false);
-      return;
+      if (
+        !registerName ||
+        !registerPassword ||
+        !registerPasswordConfirm
+      ) {
+        setFormError("Popunite sva polja.");
+        return;
+      }
+
+      if (registerPassword.length < 6) {
+        setFormError("Lozinka mora imati najmanje 6 karaktera.");
+        return;
+      }
+
+      if (registerPassword !== registerPasswordConfirm) {
+        setFormError("Lozinke se ne poklapaju.");
+        return;
+      }
+
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError || !userData?.user) {
+        setFormError("Potvrdite email.");
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: registerPassword,
+        data: {
+          full_name: registerName,
+          password_set: true,
+        },
+      });
+
+      if (updateError) throw updateError;
+
+      await syncGuestAddressesToUser(supabase, userData.user.id);
+
+      await supabase.from("profiles").upsert({
+        id: userData.user.id,
+        full_name: registerName,
+      });
+
+      setPendingProfile(false);
+      setSuccessType("auth");
+      setStep("success");
+      setTimeout(() => onSuccess?.(), 600);
     } catch (e) {
       console.error("REGISTER SUBMIT ERROR:", e);
       setFormError(getAuthErrorMessage(e));

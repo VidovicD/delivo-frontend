@@ -27,6 +27,7 @@ import {
 
 function Delivo() {
   const navigate = useNavigate();
+  const pendingProfileKey = "delivo_pending_profile";
 
   const [auth, setAuth] = useState({ session: null, ready: false });
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -92,10 +93,19 @@ function Delivo() {
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, nextSession) => {
+        const hasPendingProfile =
+          localStorage.getItem(pendingProfileKey) === "true";
+
         setAuth({ session: nextSession || null, ready: true });
+        if (hasPendingProfile && nextSession?.user) {
+          setAuthMode("register");
+          setShowAuthModal(true);
+          return;
+        }
         setShowAuthModal(false);
 
         if (event === "SIGNED_OUT") {
+          localStorage.removeItem(pendingProfileKey);
           clearGuestAddresses();
           migrationDoneRef.current = false;
           navigate("/", { replace: true });
