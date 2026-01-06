@@ -1,16 +1,13 @@
 import React from "react";
 import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
-import { COUNTRIES } from "../../utils/countries";
 
 function RegisterForm({
   registerStep,
   registerName,
-  registerPhone,
   registerEmail,
   registerPassword,
   registerOtp,
   setRegisterName,
-  setRegisterPhone,
   setRegisterEmail,
   setRegisterPassword,
   setRegisterOtp,
@@ -20,133 +17,20 @@ function RegisterForm({
   formError,
   isValidEmail,
   nameRef,
-  phoneRef,
   emailRef,
   showPassword,
   setShowPassword,
-  onNextStep,
   onSubmit,
-  selectedCountry,
-  setSelectedCountry,
   otpExpiresAt,
   otpAttemptsLeft,
+  onResendOtp,
 }) {
-  const country = selectedCountry || COUNTRIES[0];
   const minutesLeft = otpExpiresAt
     ? Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 60000))
     : 0;
 
   return (
     <div className="auth-form">
-      {registerStep === "phone" && (
-        <>
-          <div className="form-field">
-            <label>Broj telefona</label>
-
-            <div
-              className={`phone-field ${
-                registerTouched && !registerPhone ? "error" : ""
-              }`}
-            >
-              <div className="phone-country-wrapper">
-                <select
-                  className="phone-country"
-                  value={country.code}
-                  onMouseDown={(e) => {
-                    if (document.activeElement === e.target) {
-                      e.preventDefault();
-                      e.target.blur();
-                    }
-                  }}
-                  onChange={(e) => {
-                    const c = COUNTRIES.find(
-                      (x) => x.code === e.target.value
-                    );
-                    setSelectedCountry(c);
-                    e.target.blur();
-                  }}
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.flag} +{c.dialCode}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <input
-                ref={phoneRef}
-                className={`phone-input ${
-                  registerTouched && !registerPhone ? "error" : ""
-                }`}
-                type="tel"
-                value={registerPhone}
-                placeholder={selectedCountry.placeholder}
-                onChange={(e) => {
-                  setRegisterPhone(e.target.value);
-                  setRegisterTouched(false);
-                }}
-              />
-            </div>
-          </div>
-
-          <button
-            className="auth-submit"
-            type="button"
-            onClick={() => {
-              setRegisterTouched(true);
-              onNextStep();
-            }}
-            disabled={loading}
-          >
-            Nastavi
-          </button>
-
-          {formError && <div className="error-text">{formError}</div>}
-        </>
-      )}
-
-      {registerStep === "otp" && (
-        <>
-          <p className="auth-helper-text">
-            Poslat je kod na broj <strong>{registerPhone}</strong>
-          </p>
-
-          <p className="auth-helper-text">
-            Kod važi još {minutesLeft} min · Preostali pokušaji:{" "}
-            {otpAttemptsLeft}
-          </p>
-
-          <div className="form-field">
-            <label>Verifikacioni kod</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={registerOtp}
-              onChange={(e) => {
-                setRegisterOtp(e.target.value);
-                setRegisterTouched(false);
-              }}
-              className={registerTouched && !registerOtp ? "error" : ""}
-            />
-          </div>
-
-          <button
-            className="auth-submit"
-            type="button"
-            onClick={() => {
-              setRegisterTouched(true);
-              onSubmit();
-            }}
-            disabled={loading}
-          >
-            Potvrdi kod
-          </button>
-
-          {formError && <div className="error-text">{formError}</div>}
-        </>
-      )}
-
       {registerStep === "details" && (
         <>
           <div className="form-field">
@@ -219,6 +103,56 @@ function RegisterForm({
             disabled={loading}
           >
             Registruj se
+          </button>
+
+          {formError && <div className="error-text">{formError}</div>}
+        </>
+      )}
+
+      {registerStep === "otp" && (
+        <>
+          <p className="auth-helper-text">
+            Poslat je kod na email <strong>{registerEmail}</strong>
+          </p>
+
+          <p className="auth-helper-text">
+            Kod vazi jos {minutesLeft} min | Preostali pokusaji:{" "}
+            {otpAttemptsLeft}
+          </p>
+
+          <div className="form-field">
+            <label>Verifikacioni kod</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={registerOtp}
+              onChange={(e) => {
+                setRegisterOtp(e.target.value);
+                setRegisterTouched(false);
+              }}
+              className={registerTouched && !registerOtp ? "error" : ""}
+            />
+          </div>
+
+          <button
+            className="auth-submit"
+            type="button"
+            onClick={() => {
+              setRegisterTouched(true);
+              onSubmit();
+            }}
+            disabled={loading}
+          >
+            Potvrdi kod
+          </button>
+
+          <button
+            type="button"
+            className="auth-link"
+            onClick={onResendOtp}
+            disabled={loading}
+          >
+            Posalji novi kod
           </button>
 
           {formError && <div className="error-text">{formError}</div>}

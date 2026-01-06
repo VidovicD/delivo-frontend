@@ -68,6 +68,27 @@ function Delivo() {
     });
   }, []);
 
+  const handleAuthSuccess = async () => {
+    setShowAuthModal(false);
+
+    const { data } = await supabase.auth.getSession();
+    const session = data.session;
+    if (!session?.user) return;
+
+    const guest = getSavedAddresses();
+    if (guest.length) return;
+
+    const existing = await loadUserAddresses(
+      supabase,
+      session.user.id
+    );
+
+    if (!existing.length) {
+      setEditAddress(null);
+      setShowAddAddressModal(true);
+    }
+  };
+
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, nextSession) => {
@@ -213,6 +234,7 @@ function Delivo() {
               mode={authMode}
               onClose={() => setShowAuthModal(false)}
               onSwitch={setAuthMode}
+              onSuccess={handleAuthSuccess}
             />
           )}
         </>

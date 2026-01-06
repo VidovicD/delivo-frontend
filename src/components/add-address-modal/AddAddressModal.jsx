@@ -250,7 +250,7 @@ function AddAddressModal({ onClose, initialAddress }) {
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = new mapCtorRef.current(mapRef.current, {
         center,
-        zoom: 18,
+        zoom: 17,
         disableDefaultUI: true,
         zoomControl: true,
         gestureHandling: "cooperative",
@@ -304,7 +304,7 @@ function AddAddressModal({ onClose, initialAddress }) {
     } else {
       mapInstanceRef.current.setCenter(center);
       if (hasPin) {
-        mapInstanceRef.current.setZoom(18);
+        mapInstanceRef.current.setZoom(17);
       }
       if (hasPin) {
         if (!markerRef.current && markerCtorRef.current) {

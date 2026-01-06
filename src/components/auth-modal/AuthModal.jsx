@@ -19,25 +19,19 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
   const {
     step,
     successType,
-
-    loginMethod,
     loginStep,
     loginValue,
     loginPassword,
-    loginOtp,
     loginTouched,
 
     registerTouched,
     registerStep,
     registerName,
-    registerPhone,
     registerEmail,
     registerPassword,
     registerOtp,
     otpExpiresAt,
     otpAttemptsLeft,
-
-    selectedCountry,
 
     loading,
     showPassword,
@@ -120,15 +114,11 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
 
             {mode === "login" && (
               <LoginForm
-                loginMethod={loginMethod}
-                setLoginMethod={setters.setLoginMethod}
                 loginStep={loginStep}
                 loginValue={loginValue}
                 loginPassword={loginPassword}
-                loginOtp={loginOtp}
                 setLoginValue={setters.setLoginValue}
                 setLoginPassword={setters.setLoginPassword}
-                setLoginOtp={setters.setLoginOtp}
                 loginTouched={loginTouched}
                 setLoginTouched={setters.setLoginTouched}
                 loading={loading}
@@ -140,8 +130,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 onBack={handlers.handleLoginBack}
                 showPassword={showPassword}
                 setShowPassword={setters.setShowPassword}
-                selectedCountry={selectedCountry}
-                setSelectedCountry={setters.setSelectedCountry}
               />
             )}
 
@@ -149,7 +137,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
               <RegisterForm
                 registerStep={registerStep}
                 registerName={registerName}
-                registerPhone={registerPhone}
                 registerEmail={registerEmail}
                 registerPassword={registerPassword}
                 registerOtp={registerOtp}
@@ -158,7 +145,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 registerTouched={registerTouched}
                 setRegisterTouched={setters.setRegisterTouched}
                 setRegisterName={setters.setRegisterName}
-                setRegisterPhone={setters.setRegisterPhone}
                 setRegisterEmail={setters.setRegisterEmail}
                 setRegisterPassword={setters.setRegisterPassword}
                 setRegisterOtp={setters.setRegisterOtp}
@@ -166,14 +152,11 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 formError={formError}
                 isValidEmail={isValidEmail}
                 nameRef={refs.nameRef}
-                phoneRef={refs.phoneRef}
                 emailRef={refs.emailRef}
-                onNextStep={handlers.handleRegisterNextStep}
                 onSubmit={handlers.handleSubmit}
+                onResendOtp={handlers.handleRegisterResendOtp}
                 showPassword={showPassword}
                 setShowPassword={setters.setShowPassword}
-                selectedCountry={selectedCountry}
-                setSelectedCountry={setters.setSelectedCountry}
               />
             )}
 
@@ -189,25 +172,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
 
             {mode === "login" && (
               <div className="auth-login-actions">
-                {loginStep === "value" && (
-                  <button
-                    type="button"
-                    className="auth-forgot"
-                    disabled={loading}
-                    onClick={() => {
-                      setters.setLoginMethod(
-                        loginMethod === "phone" ? "email" : "phone"
-                      );
-                      setters.setLoginValue("");
-                      setters.setLoginTouched(false);
-                    }}
-                  >
-                    {loginMethod === "phone"
-                      ? "Prijava putem email adrese"
-                      : "Prijava putem broja telefona"}
-                  </button>
-                )}
-
                 <button
                   type="button"
                   className="auth-forgot"
