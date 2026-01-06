@@ -29,6 +29,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     registerName,
     registerEmail,
     registerPassword,
+    registerPasswordConfirm,
     registerOtp,
     otpExpiresAt,
     otpAttemptsLeft,
@@ -139,6 +140,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 registerName={registerName}
                 registerEmail={registerEmail}
                 registerPassword={registerPassword}
+                registerPasswordConfirm={registerPasswordConfirm}
                 registerOtp={registerOtp}
                 otpExpiresAt={otpExpiresAt}
                 otpAttemptsLeft={otpAttemptsLeft}
@@ -147,6 +149,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 setRegisterName={setters.setRegisterName}
                 setRegisterEmail={setters.setRegisterEmail}
                 setRegisterPassword={setters.setRegisterPassword}
+                setRegisterPasswordConfirm={setters.setRegisterPasswordConfirm}
                 setRegisterOtp={setters.setRegisterOtp}
                 loading={loading}
                 formError={formError}
@@ -155,8 +158,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 emailRef={refs.emailRef}
                 onSubmit={handlers.handleSubmit}
                 onResendOtp={handlers.handleRegisterResendOtp}
-                showPassword={showPassword}
-                setShowPassword={setters.setShowPassword}
               />
             )}
 

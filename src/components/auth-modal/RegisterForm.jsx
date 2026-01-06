@@ -1,15 +1,15 @@
 import React from "react";
-import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
-
 function RegisterForm({
   registerStep,
   registerName,
   registerEmail,
   registerPassword,
+  registerPasswordConfirm,
   registerOtp,
   setRegisterName,
   setRegisterEmail,
   setRegisterPassword,
+  setRegisterPasswordConfirm,
   setRegisterOtp,
   registerTouched,
   setRegisterTouched,
@@ -18,8 +18,6 @@ function RegisterForm({
   isValidEmail,
   nameRef,
   emailRef,
-  showPassword,
-  setShowPassword,
   onSubmit,
   otpExpiresAt,
   otpAttemptsLeft,
@@ -53,6 +51,7 @@ function RegisterForm({
               ref={emailRef}
               type="email"
               value={registerEmail}
+              placeholder="email@primer.com"
               onChange={(e) => {
                 setRegisterEmail(e.target.value);
                 setRegisterTouched(false);
@@ -68,29 +67,38 @@ function RegisterForm({
 
           <div className="form-field">
             <label>Lozinka</label>
+            <input
+              type="password"
+              value={registerPassword}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              onChange={(e) => {
+                setRegisterPassword(e.target.value);
+                setRegisterTouched(false);
+              }}
+              className={
+                registerTouched && !registerPassword ? "error" : ""
+              }
+            />
+          </div>
 
-            <div className="password-field">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={registerPassword}
-                onChange={(e) => {
-                  setRegisterPassword(e.target.value);
-                  setRegisterTouched(false);
-                }}
-                className={
-                  registerTouched && !registerPassword ? "error" : ""
-                }
-              />
-
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword((p) => !p)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOpen /> : <EyeClosed />}
-              </button>
-            </div>
+          <div className="form-field">
+            <label>Potvrdi lozinku</label>
+            <input
+              type="password"
+              value={registerPasswordConfirm}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              onChange={(e) => {
+                setRegisterPasswordConfirm(e.target.value);
+                setRegisterTouched(false);
+              }}
+              className={
+                registerTouched && !registerPasswordConfirm ? "error" : ""
+              }
+            />
           </div>
 
           <button

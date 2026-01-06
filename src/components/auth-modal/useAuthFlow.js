@@ -21,6 +21,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
+  const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState("");
   const [registerOtp, setRegisterOtp] = useState("");
   const [otpExpiresAt, setOtpExpiresAt] = useState(null);
   const [otpAttemptsLeft, setOtpAttemptsLeft] = useState(5);
@@ -44,6 +45,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setRegisterName("");
     setRegisterEmail("");
     setRegisterPassword("");
+    setRegisterPasswordConfirm("");
     setRegisterOtp("");
     setOtpExpiresAt(null);
     setOtpAttemptsLeft(5);
@@ -257,7 +259,12 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
-    if (!registerName || !registerEmail || !registerPassword) {
+    if (
+      !registerName ||
+      !registerEmail ||
+      !registerPassword ||
+      !registerPasswordConfirm
+    ) {
       setFormError("Popunite sva polja.");
       return;
     }
@@ -269,6 +276,11 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
     if (registerPassword.length < 6) {
       setFormError("Lozinka mora imati najmanje 6 karaktera.");
+      return;
+    }
+
+    if (registerPassword !== registerPasswordConfirm) {
+      setFormError("Lozinke se ne poklapaju.");
       return;
     }
 
@@ -339,6 +351,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       registerName,
       registerEmail,
       registerPassword,
+      registerPasswordConfirm,
       registerOtp,
       otpExpiresAt,
       otpAttemptsLeft,
@@ -353,6 +366,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setRegisterName,
       setRegisterEmail,
       setRegisterPassword,
+      setRegisterPasswordConfirm,
       setRegisterOtp,
       setRegisterTouched,
       setShowPassword,
