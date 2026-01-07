@@ -87,12 +87,32 @@
   width: 100%;
   min-width: 0;
   padding-block: 15px;
-  padding-right: 20px;
+  padding-right: 8px;
   border: none;
   background: transparent;
   outline: none;
   font-size: 16px;
   font-weight: 500;
+}
+
+.hero__search-location {
+  width: 30px;
+  height: 30px;
+  margin-right: 14px;
+  margin-left: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.hero__search-location img {
+  width: 24px;
+  height: 24px;
 }
 
 .hero__search-input::placeholder {
@@ -176,5 +196,17 @@
   .hero__search-input {
     padding-block: 12px;
     padding-right: 14px;
+  }
+
+  .hero__search-location {
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+    margin-left: 4px;
+  }
+
+  .hero__search-location img {
+    width: 18px;
+    height: 18px;
   }
 }

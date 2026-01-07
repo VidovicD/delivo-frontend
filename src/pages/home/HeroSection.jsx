@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAddress } from "../../contexts/AddressContext";
 import { loadMapbox } from "../../utils/loadMapbox";
-import { fetchMapboxSuggestions } from "../../utils/mapboxGeocoding";
+import {
+  fetchMapboxSuggestions,
+  reverseMapboxGeocode,
+} from "../../utils/mapboxGeocoding";
 import {
   isPointInDeliveryZone,
   matchesNoviSadArea,
@@ -17,6 +20,7 @@ import paket from "../../assets/paket.png";
 import hrana from "../../assets/hrana.png";
 import kamion from "../../assets/kamion.png";
 import pin from "../../assets/pin.png";
+import mylocation from "../../assets/mylocation.svg";
 
 import FloatingIcons from "../../components/floating-icons/FloatingIcons";
 
@@ -25,6 +29,7 @@ function HeroSection() {
   const { addAddressFromPlace } = useAddress();
 
   const inputRef = useRef(null);
+  const searchRef = useRef(null);
   const requestRef = useRef(0);
   const debounceRef = useRef(null);
   const cacheRef = useRef(new Map());
@@ -34,6 +39,7 @@ function HeroSection() {
   const [suggestions, setSuggestions] = useState([]);
   const [addressError, setAddressError] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const visibleSuggestions = suggestions.filter((s) => {
     const name = `${s.display_name || ""} ${s.place_name || ""}`.toLowerCase();
     return !name.includes("obilaznica");
@@ -45,12 +51,27 @@ function HeroSection() {
       .catch(() => setMapsReady(false));
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (!searchRef.current) return;
+      if (searchRef.current.contains(e.target)) return;
+      setSuggestions([]);
+      setAddressError("");
+      setLoadingSuggestions(false);
+      setIsLocating(false);
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   function handleInput(e) {
     if (!mapsReady) return;
 
     const rawValue = e.target.value;
     const value = toLatin(rawValue);
     setAddressError("");
+    setIsLocating(false);
 
     if (!value) {
       setSuggestions([]);
@@ -114,6 +135,69 @@ function HeroSection() {
     }, 300);
   }
 
+  function handleInputFocus() {
+    if (!inputRef.current) return;
+    handleInput({ target: { value: inputRef.current.value } });
+  }
+
+  async function handleUseLocation() {
+    if (!mapsReady) return;
+
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+
+    setAddressError("");
+    setSuggestions([]);
+    setLoadingSuggestions(true);
+    setIsLocating(true);
+
+    if (!navigator.geolocation) {
+      setAddressError("Lokacija nije dostupna.");
+      setLoadingSuggestions(false);
+      setIsLocating(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos?.coords?.latitude;
+        const lng = pos?.coords?.longitude;
+        if (typeof lat !== "number" || typeof lng !== "number") {
+          setAddressError("Lokacija nije dostupna.");
+          setLoadingSuggestions(false);
+          setIsLocating(false);
+          return;
+        }
+
+        const placeName = await reverseMapboxGeocode({ lng, lat });
+        if (!placeName) {
+          setAddressError("Lokacija nije dostupna.");
+          setLoadingSuggestions(false);
+          setIsLocating(false);
+          return;
+        }
+
+        setSuggestions([
+          {
+            id: "current-location",
+            display_name: placeName,
+            place_name: placeName,
+            center: { lng, lat },
+          },
+        ]);
+        setLoadingSuggestions(false);
+        setIsLocating(false);
+      },
+      () => {
+        setAddressError("Lokacija nije dostupna.");
+        setLoadingSuggestions(false);
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+    );
+  }
+
   async function handleSelect(suggestion) {
     if (!mapsReady) return;
 
@@ -154,7 +238,7 @@ function HeroSection() {
             <p>Dostava svega što vam je potrebno.</p>
           </div>
 
-          <div className="hero__search">
+          <div className="hero__search" ref={searchRef}>
             <img src={pin} alt="" className="hero__search-pin" />
 
             <input
@@ -162,9 +246,17 @@ function HeroSection() {
               className="hero__search-input"
               placeholder="Unesite adresu isporuke…"
               onChange={handleInput}
+              onFocus={handleInputFocus}
               autoComplete="off"
-              disabled={!mapsReady}
-            />
+                disabled={!mapsReady}
+              />
+            <button
+              className="hero__search-location"
+              type="button"
+              onClick={handleUseLocation}
+            >
+              <img src={mylocation} alt="" />
+            </button>
 
             {visibleSuggestions.length > 0 && (
               <div className="hero__suggestions">
@@ -185,7 +277,7 @@ function HeroSection() {
               !addressError && (
               <div className="hero__suggestions">
                 <button type="button" disabled>
-                  Trazim adrese...
+                  {isLocating ? "Tražim lokaciju..." : "Trazim adrese..."}
                 </button>
               </div>
             )}
