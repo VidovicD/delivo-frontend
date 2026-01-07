@@ -28,10 +28,12 @@ import {
 function Delivo() {
   const navigate = useNavigate();
   const pendingProfileKey = "delivo_pending_profile";
+  const pendingProfileEmailKey = "delivo_pending_profile_email";
 
   const [auth, setAuth] = useState({ session: null, ready: false });
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("login");
+  const [authHandoffActive, setAuthHandoffActive] = useState(false);
 
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [editAddress, setEditAddress] = useState(null);
@@ -41,6 +43,21 @@ function Delivo() {
 
   const authInitDoneRef = useRef(false);
   const migrationDoneRef = useRef(false);
+
+  const isEmailRegistrationIncomplete = (nextSession) => {
+    if (!nextSession?.user) return false;
+    const provider = nextSession.user.app_metadata?.provider;
+    const hasGoogleIdentity = nextSession.user.identities?.some(
+      (identity) => identity.provider === "google"
+    );
+    const isGoogleProvider = provider === "google" || hasGoogleIdentity;
+    const isEmailProvider = provider === "email" || !provider;
+    return (
+      isEmailProvider &&
+      !isGoogleProvider &&
+      nextSession.user.user_metadata?.password_set !== true
+    );
+  };
 
   useEffect(() => {
     const open = () => {
@@ -70,14 +87,26 @@ function Delivo() {
   }, []);
 
   const handleAuthSuccess = async () => {
-    setShowAuthModal(false);
-
     const { data } = await supabase.auth.getSession();
     const session = data.session;
-    if (!session?.user) return;
+    if (!session?.user) {
+      setShowAuthModal(false);
+      return;
+    }
+
+    const hasPendingProfile =
+      localStorage.getItem(pendingProfileKey) === "true" ||
+      isEmailRegistrationIncomplete(session);
+    if (hasPendingProfile) {
+      setShowAuthModal(false);
+      return;
+    }
 
     const guest = getSavedAddresses();
-    if (guest.length) return;
+    if (guest.length) {
+      setShowAuthModal(false);
+      return;
+    }
 
     const existing = await loadUserAddresses(
       supabase,
@@ -86,8 +115,11 @@ function Delivo() {
 
     if (!existing.length) {
       setEditAddress(null);
+      setAuthHandoffActive(true);
       setShowAddAddressModal(true);
+      return;
     }
+    setShowAuthModal(false);
   };
 
   useEffect(() => {
@@ -95,22 +127,39 @@ function Delivo() {
       async (event, nextSession) => {
         const hasPendingProfile =
           localStorage.getItem(pendingProfileKey) === "true";
+        const needsRegistration =
+          isEmailRegistrationIncomplete(nextSession);
 
         setAuth({ session: nextSession || null, ready: true });
+
+        if (event === "SIGNED_OUT") {
+          localStorage.removeItem(pendingProfileKey);
+          localStorage.removeItem(pendingProfileEmailKey);
+          clearGuestAddresses();
+          migrationDoneRef.current = false;
+          navigate("/", { replace: true });
+          return;
+        }
+
+        if (needsRegistration) {
+          localStorage.setItem(pendingProfileKey, "true");
+          if (nextSession?.user?.email) {
+            localStorage.setItem(
+              pendingProfileEmailKey,
+              nextSession.user.email
+            );
+          }
+          setAuthMode("register");
+          setShowAuthModal(true);
+          return;
+        }
+
         if (hasPendingProfile && nextSession?.user) {
           setAuthMode("register");
           setShowAuthModal(true);
           return;
         }
         setShowAuthModal(false);
-
-        if (event === "SIGNED_OUT") {
-          localStorage.removeItem(pendingProfileKey);
-          clearGuestAddresses();
-          migrationDoneRef.current = false;
-          navigate("/", { replace: true });
-          return;
-        }
 
         if (
           !migrationDoneRef.current &&
@@ -164,8 +213,14 @@ function Delivo() {
     session.user.identities?.some((i) => i.provider === "google") &&
     !session.user.user_metadata?.password_set;
 
+  const registrationIncomplete =
+    localStorage.getItem(pendingProfileKey) === "true" ||
+    isEmailRegistrationIncomplete(session);
+
   const layoutLocked =
-    passwordFlowActive || needsPassword || showAddAddressModal;
+    passwordFlowActive ||
+    needsPassword ||
+    showAddAddressModal;
 
   return (
     <AddressProvider
@@ -190,8 +245,15 @@ function Delivo() {
           onClose={() => {
             setShowAddAddressModal(false);
             setEditAddress(null);
+            setAuthHandoffActive(false);
           }}
           initialAddress={editAddress}
+          onReady={() => {
+            if (authHandoffActive) {
+              setShowAuthModal(false);
+              setAuthHandoffActive(false);
+            }
+          }}
         />
       )}
 
@@ -205,12 +267,17 @@ function Delivo() {
                   session={session}
                   authReady={auth.ready}
                   layoutBlocked={layoutLocked}
+                  forceRender={showAuthModal}
                   onAuthOpen={(mode) => {
                     setAuthMode(mode);
                     setShowAuthModal(true);
                   }}
                 >
-                  <RequireNoAddress session={session}>
+                  <RequireNoAddress
+                    session={session}
+                    registrationIncomplete={registrationIncomplete}
+                    authModalOpen={showAuthModal}
+                  >
                     <HomePage />
                   </RequireNoAddress>
                 </AppLayout>
@@ -224,12 +291,18 @@ function Delivo() {
                   session={session}
                   authReady={auth.ready}
                   layoutBlocked={layoutLocked}
+                  forceRender={showAuthModal}
                   onAuthOpen={(mode) => {
                     setAuthMode(mode);
                     setShowAuthModal(true);
                   }}
                 >
-                  <RequireAddress session={session}>
+                  <RequireAddress
+                    session={session}
+                    passwordFlowActive={passwordFlowActive}
+                    registrationIncomplete={registrationIncomplete}
+                    authModalOpen={showAuthModal}
+                  >
                     <ExplorePage />
                   </RequireAddress>
                 </AppLayout>
@@ -238,16 +311,23 @@ function Delivo() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-
-          {showAuthModal && (
-            <AuthModal
-              mode={authMode}
-              onClose={() => setShowAuthModal(false)}
-              onSwitch={setAuthMode}
-              onSuccess={handleAuthSuccess}
-            />
-          )}
         </>
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          mode={authMode}
+          onClose={async () => {
+            if (registrationIncomplete) {
+              localStorage.removeItem(pendingProfileKey);
+              localStorage.removeItem(pendingProfileEmailKey);
+              await supabase.auth.signOut();
+            }
+            setShowAuthModal(false);
+          }}
+          onSwitch={setAuthMode}
+          onSuccess={handleAuthSuccess}
+        />
       )}
     </AddressProvider>
   );

@@ -2,10 +2,26 @@ import { Navigate } from "react-router-dom";
 import { useAddress } from "../../contexts/AddressContext";
 import AddAddressModal from "../add-address-modal/AddAddressModal";
 
-function RequireAddress({ children, session, passwordFlowActive }) {
+function RequireAddress({
+  children,
+  session,
+  passwordFlowActive,
+  registrationIncomplete,
+  authModalOpen,
+}) {
   const { addressesReady, activeAddress } = useAddress();
 
-  if (!addressesReady) return null;
+  if (authModalOpen) {
+    return children;
+  }
+
+  if (registrationIncomplete) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!addressesReady) {
+    return children;
+  }
 
   const isAuthed = !!session?.user;
 
@@ -19,9 +35,38 @@ function RequireAddress({ children, session, passwordFlowActive }) {
     return <Navigate to="/" replace />;
   }
 
+  const needsGuestDetails =
+    !isAuthed &&
+    activeAddress &&
+    (!activeAddress.address_type ||
+      (activeAddress.address_type === "kuca" &&
+        !activeAddress.house_number) ||
+      (activeAddress.address_type !== "kuca" &&
+        (!activeAddress.entrance_number ||
+          !activeAddress.apartment_number ||
+          !activeAddress.floor)));
+
+  if (needsGuestDetails) {
+    return (
+      <>
+        {children}
+        <AddAddressModal
+          force
+          initialAddress={activeAddress}
+          onClose={() => {}}
+        />
+      </>
+    );
+  }
+
   // Ulogovan bez adrese → OBAVEZAN modal
   if (!activeAddress && isAuthed) {
-    return <AddAddressModal force onClose={() => {}} />;
+    return (
+      <>
+        {children}
+        <AddAddressModal force onClose={() => {}} />
+      </>
+    );
   }
 
   return children;

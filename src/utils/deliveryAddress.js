@@ -46,7 +46,17 @@ export function getSavedAddresses() {
   }
 }
 
-export function saveAddress({ address, lat, lng }) {
+export function saveAddress({
+  address,
+  lat,
+  lng,
+  address_type,
+  house_number,
+  entrance_number,
+  apartment_number,
+  floor,
+  entry_code,
+}) {
   const list = getSavedAddresses();
 
   const existing = list.find(
@@ -65,6 +75,12 @@ export function saveAddress({ address, lat, lng }) {
     address,
     lat,
     lng,
+    address_type: address_type ?? existing?.address_type ?? null,
+    house_number: house_number ?? existing?.house_number ?? null,
+    entrance_number: entrance_number ?? existing?.entrance_number ?? null,
+    apartment_number: apartment_number ?? existing?.apartment_number ?? null,
+    floor: floor ?? existing?.floor ?? null,
+    entry_code: entry_code ?? existing?.entry_code ?? null,
     lastUsed: Date.now(),
   };
 
@@ -79,7 +95,20 @@ export function saveAddress({ address, lat, lng }) {
   return updated;
 }
 
-export function updateAddress(id, { address, lat, lng }) {
+export function updateAddress(
+  id,
+  {
+    address,
+    lat,
+    lng,
+    address_type,
+    house_number,
+    entrance_number,
+    apartment_number,
+    floor,
+    entry_code,
+  }
+) {
   const list = getSavedAddresses();
   const existing = list.find((a) => a.id === id);
   if (!existing) return list;
@@ -89,6 +118,12 @@ export function updateAddress(id, { address, lat, lng }) {
     address,
     lat,
     lng,
+    address_type: address_type ?? existing.address_type ?? null,
+    house_number: house_number ?? existing.house_number ?? null,
+    entrance_number: entrance_number ?? existing.entrance_number ?? null,
+    apartment_number: apartment_number ?? existing.apartment_number ?? null,
+    floor: floor ?? existing.floor ?? null,
+    entry_code: entry_code ?? existing.entry_code ?? null,
     lastUsed: Date.now(),
   };
 
@@ -164,6 +199,12 @@ export async function syncGuestAddressesToUser(supabase, userId) {
     lat: a.lat,
     lng: a.lng,
     last_used: new Date(a.lastUsed || Date.now()),
+    address_type: a.address_type || null,
+    house_number: a.house_number || null,
+    entrance_number: a.entrance_number || null,
+    apartment_number: a.apartment_number || null,
+    floor: a.floor || null,
+    entry_code: a.entry_code || null,
   }));
 
   const { error } = await supabase
@@ -178,7 +219,9 @@ export async function syncGuestAddressesToUser(supabase, userId) {
 export async function loadUserAddresses(supabase, userId) {
   const { data, error } = await supabase
     .from("user_addresses")
-    .select("id, label, address, lat, lng, last_used")
+    .select(
+      "id, label, address, lat, lng, last_used, address_type, house_number, entrance_number, apartment_number, floor, entry_code"
+    )
     .eq("user_id", userId)
     .order("last_used", { ascending: false });
 
@@ -191,6 +234,12 @@ export async function loadUserAddresses(supabase, userId) {
     lat: a.lat,
     lng: a.lng,
     lastUsed: new Date(a.last_used).getTime(),
+    address_type: a.address_type,
+    house_number: a.house_number,
+    entrance_number: a.entrance_number,
+    apartment_number: a.apartment_number,
+    floor: a.floor,
+    entry_code: a.entry_code,
   }));
 }
 
@@ -205,7 +254,17 @@ export async function touchUserAddress(supabase, userId, address) {
 export async function saveUserAddress(
   supabase,
   userId,
-  { address, lat, lng }
+  {
+    address,
+    lat,
+    lng,
+    address_type,
+    house_number,
+    entrance_number,
+    apartment_number,
+    floor,
+    entry_code,
+  }
 ) {
   await supabase
     .from("user_addresses")
@@ -217,6 +276,12 @@ export async function saveUserAddress(
         lat,
         lng,
         last_used: new Date(),
+        address_type,
+        house_number,
+        entrance_number,
+        apartment_number,
+        floor,
+        entry_code,
       },
       { onConflict: "user_id,address" }
     );
@@ -226,7 +291,17 @@ export async function updateUserAddress(
   supabase,
   userId,
   id,
-  { address, lat, lng }
+  {
+    address,
+    lat,
+    lng,
+    address_type,
+    house_number,
+    entrance_number,
+    apartment_number,
+    floor,
+    entry_code,
+  }
 ) {
   await supabase
     .from("user_addresses")
@@ -235,6 +310,12 @@ export async function updateUserAddress(
       lat,
       lng,
       last_used: new Date(),
+      address_type,
+      house_number,
+      entrance_number,
+      apartment_number,
+      floor,
+      entry_code,
     })
     .eq("id", id)
     .eq("user_id", userId);

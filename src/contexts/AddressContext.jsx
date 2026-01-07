@@ -127,7 +127,17 @@ export function AddressProvider({
   );
 
   const addAddressFromPlace = useCallback(
-    async ({ address, lat, lng }) => {
+    async ({
+      address,
+      lat,
+      lng,
+      address_type,
+      house_number,
+      entrance_number,
+      apartment_number,
+      floor,
+      entry_code,
+    }) => {
       if (!address || lat == null || lng == null) return;
       if (!isPointInDeliveryZone({ lat, lng })) return;
       const normalizedAddress = toLatin(address);
@@ -137,6 +147,12 @@ export function AddressProvider({
           address: normalizedAddress,
           lat,
           lng,
+          address_type,
+          house_number,
+          entrance_number,
+          apartment_number,
+          floor,
+          entry_code,
         });
 
         await touchUserAddress(
@@ -158,6 +174,12 @@ export function AddressProvider({
         address: normalizedAddress,
         lat,
         lng,
+        address_type,
+        house_number,
+        entrance_number,
+        apartment_number,
+        floor,
+        entry_code,
       });
       setSavedAddresses([...updated]);
       setCurrentAddress(updated[0].id);
@@ -166,7 +188,18 @@ export function AddressProvider({
   );
 
   const updateAddressById = useCallback(
-    async ({ id, address, lat, lng }) => {
+    async ({
+      id,
+      address,
+      lat,
+      lng,
+      address_type,
+      house_number,
+      entrance_number,
+      apartment_number,
+      floor,
+      entry_code,
+    }) => {
       if (!id || !address || lat == null || lng == null) return;
       if (!isPointInDeliveryZone({ lat, lng })) return;
       const normalizedAddress = toLatin(address);
@@ -176,6 +209,12 @@ export function AddressProvider({
           address: normalizedAddress,
           lat,
           lng,
+          address_type,
+          house_number,
+          entrance_number,
+          apartment_number,
+          floor,
+          entry_code,
         });
 
         const list = await withTimeout(
@@ -191,6 +230,12 @@ export function AddressProvider({
         address: normalizedAddress,
         lat,
         lng,
+        address_type,
+        house_number,
+        entrance_number,
+        apartment_number,
+        floor,
+        entry_code,
       });
       setSavedAddresses([...updated]);
       setCurrentAddress(id);
@@ -201,6 +246,7 @@ export function AddressProvider({
   const deleteAddressById = useCallback(
     async (id) => {
       if (!id) return;
+      if (savedAddresses.length <= 1) return;
 
       if (session?.user?.id) {
         await supabase
@@ -221,7 +267,7 @@ export function AddressProvider({
       deleteGuestAddress(id);
       setSavedAddresses(getSavedAddresses());
     },
-    [session]
+    [session, savedAddresses]
   );
 
   const value = useMemo(

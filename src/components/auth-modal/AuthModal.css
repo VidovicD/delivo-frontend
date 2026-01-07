@@ -239,7 +239,7 @@
 }
 
 .auth-login-actions .auth-forgot:first-child {
-  padding-bottom: 0px;
+  padding-bottom: 16px;
 }
 
 .auth-submit:disabled {

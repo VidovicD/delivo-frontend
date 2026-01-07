@@ -8,10 +8,13 @@ function AppLayout({
   authReady,
   onAuthOpen,
   layoutBlocked = false,
+  forceRender = false,
 }) {
   const { addressesReady } = useAddress();
 
-  if (!authReady || !addressesReady) return null;
+  if (!authReady) return null;
+
+  if (!addressesReady && !forceRender) return null;
 
   if (layoutBlocked) {
     return <>{children}</>;

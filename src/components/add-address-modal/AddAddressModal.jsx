@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAddress } from "../../contexts/AddressContext";
-import { loadGoogleMaps } from "../../utils/loadGoogleMaps";
+import { loadMapbox } from "../../utils/loadMapbox";
+import {
+  fetchMapboxSuggestions,
+  reverseMapboxGeocode,
+} from "../../utils/mapboxGeocoding";
 import {
   DELIVERY_ZONE,
   getNoviSadLocationBias,
-  isAddressSuggestion,
   isPointInDeliveryZone,
   matchesNoviSadArea,
   formatAddressDisplay,
@@ -13,7 +16,15 @@ import {
 
 import "./AddAddressModal.css";
 
-function AddAddressModal({ onClose, initialAddress }) {
+function AddAddressModal({
+  onClose,
+  initialAddress,
+  onReady,
+  inline = false,
+  force = false,
+  backRequest,
+  onBackHandled,
+}) {
   const { addAddressFromPlace, updateAddressById } = useAddress();
 
   const inputRef = useRef(null);
@@ -24,10 +35,13 @@ function AddAddressModal({ onClose, initialAddress }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
-  const polygonRef = useRef(null);
-  const geocoderRef = useRef(null);
-  const mapCtorRef = useRef(null);
-  const markerCtorRef = useRef(null);
+  const mapboxRef = useRef(null);
+  const mapLoadedRef = useRef(false);
+  const pinElementRef = useRef(null);
+  const pinPositionRef = useRef(null);
+  const readyNotifiedRef = useRef(false);
+  const backRequestRef = useRef(backRequest);
+  const modalRef = useRef(null);
 
   const [mapsReady, setMapsReady] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -37,8 +51,34 @@ function AddAddressModal({ onClose, initialAddress }) {
   const [pinPosition, setPinPosition] = useState(null);
   const [pinInZone, setPinInZone] = useState(true);
   const [pinMoved, setPinMoved] = useState(false);
-  const [locating, setLocating] = useState(false);
   const [addressChanged, setAddressChanged] = useState(false);
+  const [addressType, setAddressType] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [entranceNumber, setEntranceNumber] = useState("");
+  const [apartmentNumber, setApartmentNumber] = useState("");
+  const [floor, setFloor] = useState("");
+  const [entryCode, setEntryCode] = useState("");
+  const [step, setStep] = useState("address");
+  const [mapMode, setMapMode] = useState("inline");
+  const visibleSuggestions = suggestions.filter((s) => {
+    const name = `${s.display_name || ""} ${s.place_name || ""}`.toLowerCase();
+    return !name.includes("obilaznica");
+  });
+
+  const initialType = initialAddress?.address_type || "kuca";
+  const initialHouse = initialAddress?.house_number || "";
+  const initialEntrance = initialAddress?.entrance_number || "";
+  const initialApartment = initialAddress?.apartment_number || "";
+  const initialFloor = initialAddress?.floor || "";
+  const initialEntry = initialAddress?.entry_code || "";
+  const detailsChanged =
+    !!initialAddress &&
+    (addressType !== initialType ||
+      houseNumber !== initialHouse ||
+      entranceNumber !== initialEntrance ||
+      apartmentNumber !== initialApartment ||
+      floor !== initialFloor ||
+      entryCode !== initialEntry);
 
   function isPlusCodeAddress(text) {
     if (!text) return false;
@@ -55,159 +95,112 @@ function AddAddressModal({ onClose, initialAddress }) {
     return current === full || current === short;
   }
 
-  const fetchAddressForPosition = useCallback(
-    (next) => {
-      if (!geocoderRef.current) return;
-      geocoderRef.current.geocode({ location: next }, (results, status) => {
-        if (status === "OK" && results && results.length > 0) {
-          const usable = results.filter((r) => {
-            const text = (r.formatted_address || "").trim();
-            const displayText = formatAddressDisplay(text);
-            const hasLetters = /[A-Za-z\u0400-\u04FF]/.test(displayText);
-            return hasLetters && !isPlusCodeAddress(text);
-          });
-          const preferred = usable.find((r) => {
-            const types = r.types || [];
-            const locType = r.geometry?.location_type;
-            const isStreet = types.includes("street_address");
-            const isPrecise =
-              locType === "ROOFTOP" || locType === "RANGE_INTERPOLATED";
-            return isStreet && isPrecise;
-          });
-          const chosen = preferred || usable[0];
-          if (!chosen) {
-            setPendingAddress("");
-            setAddressError("Nema validne adrese. Pomeri pin na ulicu.");
-            if (inputRef.current) {
-              inputRef.current.value = "";
-            }
-            return;
-          }
-          setPendingAddress(chosen.formatted_address);
-          setAddressError("");
-          if (inputRef.current) {
-            inputRef.current.value = formatAddressDisplay(
-              chosen.formatted_address
-            );
-          }
-        }
-      });
-    },
-    []
-  );
 
-  function handleUseMyLocation() {
-    if (!navigator.geolocation) {
-      setAddressError("Lokacija nije podrzana u ovom uredjaju.");
-      return;
+  function createPinContent(isAllowed) {
+    if (!pinElementRef.current) {
+      const el = document.createElement("div");
+      el.style.display = "flex";
+      el.style.flexDirection = "column";
+      el.style.alignItems = "center";
+      el.style.justifyContent = "flex-start";
+      el.style.width = "22px";
+      el.style.height = "30px";
+      el.style.position = "relative";
+
+      const head = document.createElement("div");
+      head.style.width = "22px";
+      head.style.height = "22px";
+      head.style.borderRadius = "50%";
+      head.style.border = "2px solid #ffffff";
+      head.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.25)";
+      head.style.position = "relative";
+
+      const dot = document.createElement("div");
+      dot.style.width = "8px";
+      dot.style.height = "8px";
+      dot.style.borderRadius = "50%";
+      dot.style.background = "#ffffff";
+      dot.style.position = "absolute";
+      dot.style.left = "50%";
+      dot.style.top = "50%";
+      dot.style.transform = "translate(-50%, -50%)";
+      head.appendChild(dot);
+
+      const tip = document.createElement("div");
+      tip.style.width = "0";
+      tip.style.height = "0";
+      tip.style.borderLeft = "6px solid transparent";
+      tip.style.borderRight = "6px solid transparent";
+      tip.style.borderTop = "8px solid var(--brand-primary)";
+      tip.style.marginTop = "-1px";
+
+      el.appendChild(head);
+      el.appendChild(tip);
+      pinElementRef.current = el;
     }
-    setLocating(true);
-    setAddressError("");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const next = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        };
-        const inZone = isPointInDeliveryZone(next);
-        setPinInZone(inZone);
-        setPinPosition(next);
-        setPinMoved(true);
-        setAddressError(
-          inZone ? "" : "Pin je van zone dostave. Pomeri ga unutar zone."
-        );
-        fetchAddressForPosition(next);
-        setLocating(false);
-      },
-      () => {
-        setAddressError("Ne mogu da pristupim lokaciji.");
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  }
 
-  function createPinContent(inZone) {
-    const el = document.createElement("div");
-    el.style.width = "22px";
-    el.style.height = "22px";
-    el.style.borderRadius = "12px 12px 12px 0";
-    el.style.background = inZone
-      ? "var(--brand-primary)"
-      : "var(--brand-warning)";
-    el.style.border = "2px solid #ffffff";
-    el.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.25)";
-    el.style.transform = "rotate(-45deg)";
-    el.style.position = "relative";
+    const head = pinElementRef.current.firstChild;
+    const tip = pinElementRef.current.lastChild;
+    if (head) {
+      head.style.background = isAllowed
+        ? "var(--brand-primary)"
+        : "var(--brand-warning)";
+    }
+    if (tip) {
+      tip.style.borderTopColor = isAllowed
+        ? "var(--brand-primary)"
+        : "var(--brand-warning)";
+    }
 
-    const dot = document.createElement("div");
-    dot.style.width = "8px";
-    dot.style.height = "8px";
-    dot.style.borderRadius = "50%";
-    dot.style.background = "#ffffff";
-    dot.style.position = "absolute";
-    dot.style.left = "50%";
-    dot.style.top = "50%";
-    dot.style.transform = "translate(-50%, -50%) rotate(45deg)";
-    el.appendChild(dot);
-
-    return el;
+    return pinElementRef.current;
   }
 
   useEffect(() => {
     let cancelled = false;
 
-    const tryInitLibraries = async (attempt = 0) => {
-      if (cancelled) return;
-
-      let mapsCtor = null;
-      let markerCtor = null;
-
-      if (window.google?.maps?.importLibrary) {
-        try {
-          const mapsLib = await window.google.maps.importLibrary("maps");
-          const markerLib = await window.google.maps.importLibrary("marker");
-          mapsCtor = mapsLib?.Map || null;
-          markerCtor = markerLib?.AdvancedMarkerElement || null;
-        } catch {
-          mapsCtor = null;
-          markerCtor = null;
+    loadMapbox()
+      .then((mapboxgl) => {
+        if (cancelled) return;
+        mapboxRef.current = mapboxgl;
+        if (process.env.REACT_APP_MAPBOX_TOKEN) {
+          mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
         }
-      }
-
-      if (!mapsCtor && window.google?.maps?.Map) {
-        mapsCtor = window.google.maps.Map;
-      }
-      if (!markerCtor && window.google?.maps?.marker?.AdvancedMarkerElement) {
-        markerCtor = window.google.maps.marker.AdvancedMarkerElement;
-      }
-
-      mapCtorRef.current = mapsCtor;
-      markerCtorRef.current = markerCtor;
-
-      if (mapCtorRef.current) {
         setAddressError("");
         setMapsReady(true);
-        return;
-      }
-
-      if (attempt < 8) {
-        setTimeout(() => tryInitLibraries(attempt + 1), 200);
-        return;
-      }
-
-      setMapsReady(false);
-      setAddressError("Mapa nije dostupna.");
-    };
-
-    loadGoogleMaps().then(() => {
-      tryInitLibraries(0);
-    });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMapsReady(false);
+        setAddressError("Mapa nije dostupna.");
+      });
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (inline) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    const onTouchMove = (event) => {
+      if (!modalRef.current) {
+        event.preventDefault();
+        return;
+      }
+      if (!modalRef.current.contains(event.target)) {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouchAction;
+      document.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [inline]);
 
   useEffect(() => {
     if (!mapsReady || !initialAddress) return;
@@ -227,7 +220,19 @@ function AddAddressModal({ onClose, initialAddress }) {
       setPinInZone(isPointInDeliveryZone(next));
       setPinPosition(next);
     }
+    setStep("details");
   }, [mapsReady, initialAddress]);
+
+  useEffect(() => {
+    if (!initialAddress) return;
+    setAddressType(initialAddress.address_type || "kuca");
+    setHouseNumber(initialAddress.house_number || "");
+    setEntranceNumber(initialAddress.entrance_number || "");
+    setApartmentNumber(initialAddress.apartment_number || "");
+    setFloor(initialAddress.floor || "");
+    setEntryCode(initialAddress.entry_code || "");
+    setStep("details");
+  }, [initialAddress]);
 
   useEffect(() => {
     if (!mapsReady || initialAddress || pinPosition) return;
@@ -238,115 +243,150 @@ function AddAddressModal({ onClose, initialAddress }) {
   }, [mapsReady, initialAddress, pinPosition]);
 
   useEffect(() => {
-    if (!mapsReady || !mapRef.current || !mapCtorRef.current) return;
+    pinPositionRef.current = pinPosition;
+  }, [pinPosition]);
 
+  useEffect(() => {
+    if (!mapsReady || !mapRef.current || !mapboxRef.current) return;
+    if (!initialAddress && step !== "details") return;
+
+    const mapboxgl = mapboxRef.current;
     const hasPin = !!pinPosition;
     const center = hasPin
       ? { lat: pinPosition.lat, lng: pinPosition.lng }
       : getNoviSadLocationBias().center;
-    const zonePath = DELIVERY_ZONE.map(([lng, lat]) => ({ lat, lng }));
     const isInZone = hasPin ? isPointInDeliveryZone(center) : true;
+    const zoneData = {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [DELIVERY_ZONE],
+      },
+    };
 
-    if (!mapInstanceRef.current) {
-      mapInstanceRef.current = new mapCtorRef.current(mapRef.current, {
-        center,
-        zoom: 17,
-        disableDefaultUI: true,
-        zoomControl: true,
-        gestureHandling: "cooperative",
-        keyboardShortcuts: false,
-        clickableIcons: false,
-        ...(process.env.REACT_APP_GOOGLE_MAPS_MAP_ID
-          ? { mapId: process.env.REACT_APP_GOOGLE_MAPS_MAP_ID }
-          : {}),
-      });
-      if (hasPin && markerCtorRef.current) {
-        markerRef.current = new markerCtorRef.current({
-          map: mapInstanceRef.current,
-          position: center,
-          content: createPinContent(isInZone),
-          gmpDraggable: true,
+    const ensureSources = (map) => {
+      if (!map.getSource("delivery-zone")) {
+        map.addSource("delivery-zone", {
+          type: "geojson",
+          data: zoneData,
         });
-        markerRef.current.addListener("dragend", (event) => {
-          const pos =
-            event && event.latLng ? event.latLng : markerRef.current.position;
-          if (!pos) return;
-          const next = { lat: pos.lat(), lng: pos.lng() };
-          const inZone = isPointInDeliveryZone(next);
-          setPinInZone(inZone);
+        map.addLayer({
+          id: "delivery-zone-fill",
+          type: "fill",
+          source: "delivery-zone",
+          paint: {
+            "fill-color": "#0f172a",
+            "fill-opacity": 0.08,
+          },
+        });
+        map.addLayer({
+          id: "delivery-zone-line",
+          type: "line",
+          source: "delivery-zone",
+          paint: {
+            "line-color": "#0f172a",
+            "line-opacity": 0.8,
+            "line-width": 2,
+          },
+        });
+      } else {
+        map.getSource("delivery-zone").setData(zoneData);
+      }
+    };
+
+    const ensureMarker = (map, markerCenter, markerInZone) => {
+      if (!markerRef.current) {
+        markerRef.current = new mapboxgl.Marker({
+          element: createPinContent(markerInZone),
+          draggable: mapMode === "full",
+          anchor: "bottom",
+        })
+          .setLngLat([markerCenter.lng, markerCenter.lat])
+          .addTo(map);
+        markerRef.current.on("dragend", async () => {
+          const lngLat = markerRef.current.getLngLat();
+          const rawNext = { lat: lngLat.lat, lng: lngLat.lng };
+          const next = rawNext;
+          const nextInZone = isPointInDeliveryZone(next);
+          setPinInZone(nextInZone);
           setPinPosition(next);
           setPinMoved(true);
           if (markerRef.current) {
-            markerRef.current.content = createPinContent(inZone);
+            markerRef.current.setLngLat([next.lng, next.lat]);
+            createPinContent(nextInZone);
           }
           setAddressError(
-            inZone ? "" : "Pin je van zone dostave. Pomeri ga unutar zone."
+            nextInZone ? "" : "Pin je van zone dostave. Pomeri ga unutar zone."
           );
-          fetchAddressForPosition(next);
+          const address = await reverseMapboxGeocode(next);
+          if (!address) return;
+          setPendingAddress(address);
+          if (inputRef.current) {
+            inputRef.current.value = formatAddressDisplay(address);
+          }
         });
+      } else {
+        markerRef.current.setLngLat([markerCenter.lng, markerCenter.lat]);
+        markerRef.current.setDraggable(mapMode === "full");
+        createPinContent(markerInZone);
       }
-      polygonRef.current = new window.google.maps.Polygon({
-        map: mapInstanceRef.current,
-        paths: zonePath,
-        strokeColor: "#0f172a",
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: "#0f172a",
-        fillOpacity: 0.08,
-        clickable: false,
+    };
+
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = new mapboxgl.Map({
+        container: mapRef.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [center.lng, center.lat],
+        zoom: 17,
+        interactive: mapMode === "full",
       });
-      if (!geocoderRef.current) {
-        geocoderRef.current = new window.google.maps.Geocoder();
+      if (mapMode !== "full") {
+        mapInstanceRef.current.scrollZoom.disable();
+        mapInstanceRef.current.dragPan.disable();
+        mapInstanceRef.current.doubleClickZoom.disable();
+        mapInstanceRef.current.touchZoomRotate.disable();
+        mapInstanceRef.current.keyboard.disable();
       }
-      if (hasPin) {
-        setPinInZone(isInZone);
-      }
-    } else {
-      mapInstanceRef.current.setCenter(center);
-      if (hasPin) {
-        mapInstanceRef.current.setZoom(17);
-      }
-      if (hasPin) {
-        if (!markerRef.current && markerCtorRef.current) {
-          markerRef.current = new markerCtorRef.current({
-            map: mapInstanceRef.current,
-            position: center,
-            content: createPinContent(isInZone),
-            gmpDraggable: true,
-          });
-          markerRef.current.addListener("dragend", (event) => {
-            const pos =
-              event && event.latLng
-                ? event.latLng
-                : markerRef.current.position;
-            if (!pos) return;
-            const next = { lat: pos.lat(), lng: pos.lng() };
-            const inZone = isPointInDeliveryZone(next);
-            setPinInZone(inZone);
-            setPinPosition(next);
-            setPinMoved(true);
-            if (markerRef.current) {
-              markerRef.current.content = createPinContent(inZone);
-            }
-            setAddressError(
-              inZone ? "" : "Pin je van zone dostave. Pomeri ga unutar zone."
-            );
-            fetchAddressForPosition(next);
-          });
-        } else if (markerRef.current) {
-          markerRef.current.map = mapInstanceRef.current;
-          markerRef.current.position = center;
-          markerRef.current.content = createPinContent(isInZone);
+      mapInstanceRef.current.on("load", () => {
+        mapLoadedRef.current = true;
+        const latestPin = pinPositionRef.current;
+        const loadCenter = latestPin
+          ? { lat: latestPin.lat, lng: latestPin.lng }
+          : center;
+        const loadInZone = latestPin ? isPointInDeliveryZone(loadCenter) : true;
+        mapInstanceRef.current.setCenter([loadCenter.lng, loadCenter.lat]);
+        ensureSources(mapInstanceRef.current);
+        ensureMarker(mapInstanceRef.current, loadCenter, loadInZone);
+        if (!readyNotifiedRef.current && onReady) {
+          readyNotifiedRef.current = true;
+          onReady();
         }
-        setPinInZone(isInZone);
-      } else if (markerRef.current) {
-        markerRef.current.map = null;
+      });
+    } else if (mapLoadedRef.current) {
+      mapInstanceRef.current.setCenter([center.lng, center.lat]);
+      if (mapMode === "full") {
+        mapInstanceRef.current.scrollZoom.enable();
+        mapInstanceRef.current.dragPan.enable();
+        mapInstanceRef.current.doubleClickZoom.enable();
+        mapInstanceRef.current.touchZoomRotate.enable();
+        mapInstanceRef.current.keyboard.enable();
+      } else {
+        mapInstanceRef.current.scrollZoom.disable();
+        mapInstanceRef.current.dragPan.disable();
+        mapInstanceRef.current.doubleClickZoom.disable();
+        mapInstanceRef.current.touchZoomRotate.disable();
+        mapInstanceRef.current.keyboard.disable();
       }
-      if (polygonRef.current) {
-        polygonRef.current.setPaths(zonePath);
-      }
+      ensureSources(mapInstanceRef.current);
+      ensureMarker(mapInstanceRef.current, center, isInZone);
     }
-  }, [mapsReady, pinPosition, fetchAddressForPosition]);
+
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.resize();
+    }
+
+    setPinInZone(isInZone);
+  }, [mapsReady, pinPosition, step, initialAddress, mapMode]);
 
   function handleInput(e) {
     if (!mapsReady) return;
@@ -398,63 +438,20 @@ function AddAddressModal({ onClose, initialAddress }) {
         cacheRef.current.delete(query);
       }
 
-      const baseRequest = {
-        input: query,
-        includedRegionCodes: ["RS"],
-        locationBias: getNoviSadLocationBias(),
-      };
-
       const currentRequest = ++requestRef.current;
-
-      async function getFilteredSuggestions(req) {
-        const { suggestions: rawSuggestions } =
-          await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
-            req
-          );
-
-        const candidates = (rawSuggestions || [])
-          .filter((s) => isAddressSuggestion(s))
-          .slice(0, 10);
-
-        const filtered = await Promise.all(
-          candidates.map(async (s) => {
-            try {
-              const place = s.placePrediction.toPlace();
-              await place.fetchFields({ fields: ["location"] });
-              if (!place.location) return null;
-              const inZone = isPointInDeliveryZone({
-                lat: place.location.lat(),
-                lng: place.location.lng(),
-              });
-              return inZone ? s : null;
-            } catch {
-              return null;
-            }
-          })
-        );
-
-        return filtered.filter(Boolean).slice(0, 3);
-      }
-
-      let next = await getFilteredSuggestions(baseRequest);
+      let next = await fetchMapboxSuggestions(query);
 
       if (!next.length && value.length > 4) {
         const fallbackInput = query.slice(0, -1).trim();
         if (fallbackInput.length >= 3) {
-          next = await getFilteredSuggestions({
-            ...baseRequest,
-            input: fallbackInput,
-          });
+          next = await fetchMapboxSuggestions(fallbackInput);
         }
       }
 
       if (!next.length) {
         const rawInput = value.trim();
         if (rawInput.length >= 3 && rawInput !== query) {
-          next = await getFilteredSuggestions({
-            ...baseRequest,
-            input: rawInput,
-          });
+          next = await fetchMapboxSuggestions(rawInput);
         }
       }
 
@@ -469,24 +466,17 @@ function AddAddressModal({ onClose, initialAddress }) {
 
   async function handleSelect(suggestion) {
     if (!mapsReady) return;
-
-    const place = suggestion.placePrediction.toPlace();
-
-    await place.fetchFields({
-      fields: ["formattedAddress", "location", "addressComponents"],
-    });
-
-    if (!place.formattedAddress || !place.location) return;
+    if (!suggestion?.place_name || !suggestion?.center) return;
 
     setSuggestions([]);
     setAddressError("");
-    setPendingAddress(place.formattedAddress);
+    setPendingAddress(suggestion.place_name);
     if (inputRef.current) {
-      inputRef.current.value = formatAddressDisplay(place.formattedAddress);
+      inputRef.current.value = formatAddressDisplay(suggestion.place_name);
     }
     const next = {
-      lat: place.location.lat(),
-      lng: place.location.lng(),
+      lat: suggestion.center.lat,
+      lng: suggestion.center.lng,
     };
     setPinInZone(isPointInDeliveryZone(next));
     setPinPosition(next);
@@ -494,6 +484,22 @@ function AddAddressModal({ onClose, initialAddress }) {
     if (initialAddress) {
       setAddressChanged(true);
     }
+    if (!initialAddress) {
+      setAddressType("");
+    }
+  }
+
+  function handleContinueFromAddress() {
+    if (!pendingAddress || !pinPosition) return;
+    setStep("type");
+  }
+
+  function handleMapModeOpen() {
+    setMapMode("full");
+  }
+
+  function handleMapModeClose() {
+    setMapMode("inline");
   }
 
   async function handleConfirmPin() {
@@ -503,118 +509,291 @@ function AddAddressModal({ onClose, initialAddress }) {
       return;
     }
 
+    const isHouse = addressType === "kuca";
+    const needsUnit = addressType !== "kuca";
+    const missingRequired =
+      (isHouse && !houseNumber) ||
+      (needsUnit &&
+        (!entranceNumber || !apartmentNumber || !floor));
+
+    if (missingRequired) {
+      setAddressError("Popunite sva obavezna polja.");
+      return;
+    }
+
+    const payload = {
+      address: pendingAddress,
+      lat: pinPosition.lat,
+      lng: pinPosition.lng,
+      address_type: addressType,
+      house_number: isHouse ? houseNumber : null,
+      entrance_number: needsUnit ? entranceNumber : null,
+      apartment_number: needsUnit ? apartmentNumber : null,
+      floor: needsUnit ? floor : null,
+      entry_code:
+        addressType === "stan" || addressType === "ostalo"
+          ? entryCode
+          : null,
+    };
+
     if (initialAddress?.id) {
       await updateAddressById({
         id: initialAddress.id,
-        address: pendingAddress,
-        lat: pinPosition.lat,
-        lng: pinPosition.lng,
+        ...payload,
       });
     } else {
-      await addAddressFromPlace({
-        address: pendingAddress,
-        lat: pinPosition.lat,
-        lng: pinPosition.lng,
-      });
+      await addAddressFromPlace(payload);
     }
 
     onClose();
   }
 
-  return (
-    <div className="aa-overlay">
-      <div className="aa-modal">
-        <h2>{initialAddress ? "Izmena adrese" : "Dodavanje adrese"}</h2>
+  useEffect(() => {
+    if (backRequest == null) return;
+    if (backRequestRef.current === backRequest) return;
+    backRequestRef.current = backRequest;
+    if (!initialAddress && step !== "address") {
+      setStep(step === "details" ? "type" : "address");
+      if (onBackHandled) onBackHandled(true);
+      return;
+    }
+    if (onBackHandled) onBackHandled(false);
+  }, [backRequest, initialAddress, onBackHandled, step]);
 
-        <div className="aa-search">
-          <input
-            ref={inputRef}
-            className="aa-input"
-            placeholder="Unesite adresu"
-            onChange={handleInput}
-            autoComplete="off"
-            disabled={!mapsReady}
-          />
-          <button
-            type="button"
-            className="aa-locate aa-locate--input"
-            onClick={handleUseMyLocation}
-            disabled={locating || !mapsReady}
-            title="Moja lokacija"
-          >
-            {locating ? "..." : <span className="aa-locate-icon" />}
-          </button>
+  const content = (
+    <div
+      ref={modalRef}
+      className={`aa-modal${mapMode === "full" ? " is-map-full" : ""}`}
+    >
+      {!inline && !force && (
+        <button type="button" className="aa-close" onClick={onClose}>
+          x
+        </button>
+      )}
+      {step !== "type" && (
+        <>
+          <h2>
+            {step === "details"
+              ? "Adresa"
+              : initialAddress
+                ? "Izmena adrese"
+                : "Unesite adresu"}
+          </h2>
+          {step === "details" && (
+            <div className="aa-selected-address">
+              {formatAddressDisplay(
+                pendingAddress || initialAddress?.address || ""
+              )}
+            </div>
+          )}
+        </>
+      )}
 
-          {suggestions.length > 0 && (
-            <div className="aa-suggestions">
-              {suggestions.map((s, i) => (
+        {step === "address" && (
+          <>
+            <div className="aa-search">
+              <input
+                ref={inputRef}
+                className="aa-input"
+                placeholder="Naziv ulice i broj"
+                onChange={handleInput}
+                autoComplete="off"
+                disabled={!mapsReady}
+              />
+            {visibleSuggestions.length > 0 && (
+              <div className="aa-suggestions">
+                {visibleSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSelect(s)}
+                  >
+                    {formatAddressDisplay(s.display_name || s.place_name)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {loadingSuggestions &&
+              visibleSuggestions.length === 0 &&
+              !addressError && (
+              <div className="aa-suggestions">
+                <button type="button" disabled>
+                  Trazim adrese...
+                  </button>
+                </div>
+              )}
+
+              {addressError && (
+                <div className="aa-suggestions">
+                  <button type="button" disabled>
+                    {addressError}
+                  </button>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="aa-confirm aa-continue"
+              onClick={handleContinueFromAddress}
+              disabled={!pendingAddress || !pinPosition}
+            >
+              Nastavi
+            </button>
+          </>
+        )}
+
+        {step === "type" && (
+          <div className="aa-type-step is-type">
+            <h3>Izaberite tip objekta</h3>
+            <div className="aa-type-options">
+              {["kuca", "stan", "ostalo"].map((type) => (
                 <button
-                  key={i}
+                  key={type}
                   type="button"
-                  onClick={() => handleSelect(s)}
+                  className={`aa-type-btn${
+                    addressType === type ? " active" : ""
+                  }`}
+                  onClick={() => {
+                    setAddressType(type);
+                    if (!initialAddress) setStep("details");
+                  }}
                 >
-                  {formatAddressDisplay(s.placePrediction.text.text)}
+                  {type === "kuca" && "Kuća"}
+                  {type === "stan" && "Stan"}
+                  {type === "ostalo" && "Ostalo"}
                 </button>
               ))}
             </div>
-          )}
-
-          {loadingSuggestions && suggestions.length === 0 && !addressError && (
-            <div className="aa-suggestions">
-              <button type="button" disabled>
-                Trazim adrese...
-              </button>
-            </div>
-          )}
-
-          {addressError && (
-            <div className="aa-suggestions">
-              <button type="button" disabled>
-                {addressError}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="aa-map">
-          <div className="aa-map-title">
-            Potvrdi lokaciju na mapi
           </div>
-          {pendingAddress ? (
-              <div className="aa-map-subtitle">
-                Pomeri pin na tacnu adresu: {formatAddressDisplay(pendingAddress)}
-              </div>
-          ) : (
-            <div className="aa-map-subtitle">
-              Unesi adresu pa pomeri pin.
-            </div>
-          )}
-          {!mapsReady && (
-            <div className="aa-map-subtitle">
-              Ucitavam mapu...
-            </div>
-          )}
-            {pinPosition && (!pinMoved && (!initialAddress || addressChanged)) && (
-              <div className="aa-map-subtitle">
-                Pomeri pin da potvrdis tacnu lokaciju.
+        )}
+
+        {(initialAddress || step === "details") && (
+          <div className="aa-type-step">
+            <h3>Izaberite tip objekta</h3>
+            <select
+              className="aa-type-select"
+              value={addressType}
+              onChange={(e) => {
+                setAddressType(e.target.value);
+              }}
+            >
+              <option value="kuca">Kuća</option>
+              <option value="stan">Stan</option>
+              <option value="ostalo">Ostalo</option>
+            </select>
+          </div>
+        )}
+
+        {(initialAddress || step === "details") && (
+          <div className="aa-details">
+            {addressType === "kuca" && (
+              <div className="aa-field">
+                <label>Broj kuće</label>
+                <input
+                  type="text"
+                  value={houseNumber}
+                  onChange={(e) => setHouseNumber(e.target.value)}
+                />
               </div>
             )}
-          <div className="aa-map-frame" ref={mapRef} />
-          <button
-            type="button"
-            className="aa-confirm"
-            onClick={handleConfirmPin}
+
+            {addressType !== "kuca" && (
+              <>
+                <div className="aa-field">
+                  <label>Broj ulaza</label>
+                  <input
+                    type="text"
+                    value={entranceNumber}
+                    onChange={(e) => setEntranceNumber(e.target.value)}
+                  />
+                </div>
+                <div className="aa-field">
+                  <label>Broj stana</label>
+                  <input
+                    type="text"
+                    value={apartmentNumber}
+                    onChange={(e) => setApartmentNumber(e.target.value)}
+                  />
+                </div>
+                <div className="aa-field">
+                  <label>Sprat</label>
+                  <input
+                    type="text"
+                    value={floor}
+                    onChange={(e) => setFloor(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
+            {(addressType === "stan" || addressType === "ostalo") && (
+              <div className="aa-field">
+                <label>Sifra za ulaz (opciono)</label>
+                <input
+                  type="text"
+                  value={entryCode}
+                  onChange={(e) => setEntryCode(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {(initialAddress || step === "details") && (
+          <div className="aa-map">
+            <div className="aa-map-title">Tačna lokacija ulaza</div>
+            <div className="aa-map-container">
+              {mapMode !== "full" && (
+                <button
+                  type="button"
+                  className="aa-map-action"
+                  onClick={handleMapModeOpen}
+                >
+                  Izaberi na mapi
+                </button>
+              )}
+              <div className="aa-map-frame" ref={mapRef} />
+            </div>
+            {!mapsReady && (
+              <div className="aa-map-subtitle">
+                Ucitavam mapu...
+              </div>
+            )}
+            <button
+              type="button"
+              className="aa-confirm"
+              onClick={mapMode === "full" ? handleMapModeClose : handleConfirmPin}
               disabled={
-                !pinInZone ||
-                (!pinMoved && (!initialAddress || addressChanged))
+                mapMode === "full"
+                  ? !pinInZone
+                  : !pinInZone ||
+                    ((!pinMoved && (!initialAddress || addressChanged)) &&
+                      !detailsChanged) ||
+                    (initialAddress &&
+                      ((addressType === "kuca" && !houseNumber) ||
+                        (addressType !== "kuca" &&
+                          (!entranceNumber ||
+                            !apartmentNumber ||
+                            !floor))))
               }
             >
-            {initialAddress ? "Sacuvaj izmene" : "Potvrdi adresu"}
-          </button>
-        </div>
-      </div>
+              {mapMode === "full"
+                ? "Nastavi"
+                : initialAddress
+                  ? "Sacuvaj izmene"
+                  : "Potvrdi adresu"}
+            </button>
+          </div>
+        )}
     </div>
   );
+
+  if (inline) {
+    return <div className="aa-inline">{content}</div>;
+  }
+
+  return <div className="aa-overlay">{content}</div>;
 }
 
 export default AddAddressModal;

@@ -5,8 +5,6 @@ import { formatAddressDisplay } from "../../utils/addressValidation";
 
 import "./ExplorePage.css";
 
-const MAX_ADDRESSES = 3;
-
 function getDistanceKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -23,13 +21,8 @@ function getDistanceKm(lat1, lng1, lat2, lng2) {
 }
 
 function ExplorePage() {
-  const [showPicker, setShowPicker] = useState(false);
-
   const {
-    savedAddresses,
     activeAddress,
-    setActiveById,
-    deleteAddressById,
   } = useAddress();
 
   const [restaurants, setRestaurants] = useState([]);
@@ -76,89 +69,7 @@ function ExplorePage() {
 
   return (
     <div className="explore">
-      <div className="explore__header">
-        <h1 className="explore__title">Prodavnice</h1>
-
-        {savedAddresses.length > 0 && activeAddress && (
-          <div className="address-picker">
-            <button
-              className="address-picker__trigger"
-              type="button"
-              onClick={() => setShowPicker((v) => !v)}
-            >
-              <span
-                className="address-picker__value"
-                title={formatAddressDisplay(activeAddress.address)}
-              >
-                {formatAddressDisplay(activeAddress.address)}
-              </span>
-              <span className="address-picker__chevron">▾</span>
-            </button>
-
-            {showPicker && (
-              <div className="address-picker__menu">
-                {savedAddresses.map((a) => (
-                  <div key={a.id} className="address-picker__row">
-                    <button
-                      className="address-picker__option"
-                      type="button"
-                      onClick={async () => {
-                        await setActiveById(a.id);
-                        setShowPicker(false);
-                      }}
-                    >
-                      <strong>{a.label}</strong>
-                      <span>{formatAddressDisplay(a.address)}</span>
-                    </button>
-
-                    <button
-                      className="address-picker__edit"
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowPicker(false);
-                        window.dispatchEvent(
-                          new CustomEvent("open-edit-address", { detail: a })
-                        );
-                      }}
-                    >
-                      Izmeni
-                    </button>
-
-                    {savedAddresses.length > 1 && (
-                      <button
-                        className="address-picker__delete"
-                        type="button"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          await deleteAddressById(a.id);
-                        }}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                {savedAddresses.length < MAX_ADDRESSES && (
-                  <button
-                    className="address-picker__new"
-                    type="button"
-                    onClick={() => {
-                      setShowPicker(false);
-                      window.dispatchEvent(
-                        new CustomEvent("open-add-address")
-                      );
-                    }}
-                  >
-                    + Nova adresa
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      
 
       {loading && (
         <p style={{ textAlign: "center", marginTop: 40 }}>

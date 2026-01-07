@@ -149,6 +149,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setLoading(true);
     try {
       await loginWithPassword(loginValue, loginPassword);
+      setPendingProfile(false);
       setSuccessType("auth");
       setStep("success");
       setTimeout(() => onSuccess?.(), 600);
@@ -197,6 +198,22 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       if (error) throw error;
 
       if (data?.session || data?.user) {
+        const { data: userData, error: userError } =
+          await supabase.auth.getUser();
+
+        if (userError) throw userError;
+
+        const passwordSet =
+          userData?.user?.user_metadata?.password_set === true;
+
+        if (passwordSet) {
+          setPendingProfile(false);
+          setSuccessType("auth");
+          setStep("success");
+          setTimeout(() => onSuccess?.(), 600);
+          return;
+        }
+
         setPendingProfile(true, registerEmail);
         setRegisterStep("details");
         setRegisterTouched(false);
@@ -277,8 +294,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
         if (emailError) throw emailError;
 
-        if (emailData?.exists) {
-          setFormError("Vec postoji nalog sa ovom email adresom.");
+        if (emailData?.exists && emailData?.passwordSet === true) {
+          setFormError("Nalog vec postoji. Prijavite se.");
           return;
         }
 
@@ -338,7 +355,16 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setTimeout(() => onSuccess?.(), 600);
     } catch (e) {
       console.error("REGISTER SUBMIT ERROR:", e);
-      setFormError(getAuthErrorMessage(e));
+      const msg = (e?.message || "").toLowerCase();
+      if (
+        e?.status === 429 ||
+        msg.includes("security purposes") ||
+        msg.includes("too many")
+      ) {
+        setFormError("Previse zahteva. Sacekajte minut pa pokusajte ponovo.");
+      } else {
+        setFormError(getAuthErrorMessage(e));
+      }
     } finally {
       setLoading(false);
     }

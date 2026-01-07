@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAddress } from "../../contexts/AddressContext";
-import { loadGoogleMaps } from "../../utils/loadGoogleMaps";
+import { loadMapbox } from "../../utils/loadMapbox";
+import { fetchMapboxSuggestions } from "../../utils/mapboxGeocoding";
 import {
-  getNoviSadLocationBias,
-  isAddressSuggestion,
   isPointInDeliveryZone,
   matchesNoviSadArea,
   formatAddressDisplay,
@@ -35,11 +34,15 @@ function HeroSection() {
   const [suggestions, setSuggestions] = useState([]);
   const [addressError, setAddressError] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const visibleSuggestions = suggestions.filter((s) => {
+    const name = `${s.display_name || ""} ${s.place_name || ""}`.toLowerCase();
+    return !name.includes("obilaznica");
+  });
 
   useEffect(() => {
-    loadGoogleMaps().then(() => {
-      setMapsReady(true);
-    });
+    loadMapbox()
+      .then(() => setMapsReady(true))
+      .catch(() => setMapsReady(false));
   }, []);
 
   function handleInput(e) {
@@ -84,63 +87,21 @@ function HeroSection() {
         cacheRef.current.delete(query);
       }
 
-      const baseRequest = {
-        input: query,
-        includedRegionCodes: ["RS"],
-        locationBias: getNoviSadLocationBias(),
-      };
-
       const currentRequest = ++requestRef.current;
 
-      async function getFilteredSuggestions(req) {
-        const { suggestions: rawSuggestions } =
-          await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
-            req
-          );
-
-        const candidates = (rawSuggestions || [])
-          .filter((s) => isAddressSuggestion(s))
-          .slice(0, 10);
-
-        const filtered = await Promise.all(
-          candidates.map(async (s) => {
-            try {
-              const place = s.placePrediction.toPlace();
-              await place.fetchFields({ fields: ["location"] });
-              if (!place.location) return null;
-              const inZone = isPointInDeliveryZone({
-                lat: place.location.lat(),
-                lng: place.location.lng(),
-              });
-              return inZone ? s : null;
-            } catch {
-              return null;
-            }
-          })
-        );
-
-        return filtered.filter(Boolean).slice(0, 3);
-      }
-
-      let next = await getFilteredSuggestions(baseRequest);
+      let next = await fetchMapboxSuggestions(query);
 
       if (!next.length && value.length > 4) {
         const fallbackInput = query.slice(0, -1).trim();
         if (fallbackInput.length >= 3) {
-          next = await getFilteredSuggestions({
-            ...baseRequest,
-            input: fallbackInput,
-          });
+          next = await fetchMapboxSuggestions(fallbackInput);
         }
       }
 
       if (!next.length) {
         const rawInput = value.trim();
         if (rawInput.length >= 3 && rawInput !== query) {
-          next = await getFilteredSuggestions({
-            ...baseRequest,
-            input: rawInput,
-          });
+          next = await fetchMapboxSuggestions(rawInput);
         }
       }
 
@@ -156,18 +117,12 @@ function HeroSection() {
   async function handleSelect(suggestion) {
     if (!mapsReady) return;
 
-    const place = suggestion.placePrediction.toPlace();
-
-    await place.fetchFields({
-      fields: ["formattedAddress", "location", "addressComponents"],
-    });
-
-    if (!place.formattedAddress || !place.location) return;
+    if (!suggestion?.place_name || !suggestion?.center) return;
 
     if (
       !isPointInDeliveryZone({
-        lat: place.location.lat(),
-        lng: place.location.lng(),
+        lat: suggestion.center.lat,
+        lng: suggestion.center.lng,
       })
     ) {
       setAddressError("Dostava je dostupna samo u zoni dostave.");
@@ -176,9 +131,9 @@ function HeroSection() {
     }
 
     await addAddressFromPlace({
-      address: place.formattedAddress,
-      lat: place.location.lat(),
-      lng: place.location.lng(),
+      address: suggestion.place_name,
+      lat: suggestion.center.lat,
+      lng: suggestion.center.lng,
     });
 
     navigate("/explore", { replace: true });
@@ -211,21 +166,23 @@ function HeroSection() {
               disabled={!mapsReady}
             />
 
-            {suggestions.length > 0 && (
+            {visibleSuggestions.length > 0 && (
               <div className="hero__suggestions">
-                {suggestions.map((s, i) => (
+                {visibleSuggestions.map((s, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => handleSelect(s)}
                   >
-                    {formatAddressDisplay(s.placePrediction.text.text)}
+                    {formatAddressDisplay(s.display_name || s.place_name)}
                   </button>
                 ))}
               </div>
             )}
 
-            {loadingSuggestions && suggestions.length === 0 && !addressError && (
+            {loadingSuggestions &&
+              visibleSuggestions.length === 0 &&
+              !addressError && (
               <div className="hero__suggestions">
                 <button type="button" disabled>
                   Trazim adrese...

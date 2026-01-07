@@ -1,10 +1,25 @@
 import { Navigate } from "react-router-dom";
 import { useAddress } from "../../contexts/AddressContext";
 
-function RequireNoAddress({ children, session }) {
+function RequireNoAddress({
+  children,
+  session,
+  registrationIncomplete,
+  authModalOpen,
+}) {
   const { addressesReady, activeAddress } = useAddress();
 
-  if (!addressesReady) return null;
+  if (authModalOpen) {
+    return children;
+  }
+
+  if (registrationIncomplete) {
+    return children;
+  }
+
+  if (!addressesReady) {
+    return children;
+  }
 
   const isAuthed = !!session?.user;
 
