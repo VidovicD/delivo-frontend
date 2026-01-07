@@ -77,7 +77,7 @@ function Header({ session, authReady, onAuthOpen }) {
           <input
             className="hero__search-input"
             type="text"
-            placeholder="Pretra?i Delivo..."
+            placeholder="Pretraži Delivo..."
           />
         </div>
       </div>
