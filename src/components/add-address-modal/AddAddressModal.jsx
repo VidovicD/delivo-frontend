@@ -80,11 +80,6 @@ function AddAddressModal({
       floor !== initialFloor ||
       entryCode !== initialEntry);
 
-  function isPlusCodeAddress(text) {
-    if (!text) return false;
-    return /^[23456789CFGHJMPQRVWX]{4,}\+/.test(text.trim());
-  }
-
   function isSameAddressInput(value, initialValue) {
     const current = toLatin(value || "").trim().toLowerCase();
     const full = toLatin(initialValue || "").trim().toLowerCase();
@@ -386,7 +381,7 @@ function AddAddressModal({
     }
 
     setPinInZone(isInZone);
-  }, [mapsReady, pinPosition, step, initialAddress, mapMode]);
+  }, [mapsReady, pinPosition, step, initialAddress, mapMode, onReady]);
 
   function handleInput(e) {
     if (!mapsReady) return;

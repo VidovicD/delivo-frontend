@@ -1,7 +1,6 @@
 import {
   getNoviSadLocationBias,
   getNoviSadLocationRestriction,
-  isPointInDeliveryZone,
   toLatin,
 } from "./addressValidation";
 
