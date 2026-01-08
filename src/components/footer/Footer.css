@@ -15,3 +15,10 @@ footer {
   justify-content: center;
   cursor: default;
 }
+
+@media (max-width: 480px) {
+  .footer-bottom {
+    height: 56px;
+    min-height: 56px;
+  }
+}

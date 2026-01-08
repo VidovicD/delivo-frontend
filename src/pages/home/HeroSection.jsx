@@ -21,6 +21,7 @@ import hrana from "../../assets/hrana.png";
 import kamion from "../../assets/kamion.png";
 import pin from "../../assets/pin.png";
 import mylocation from "../../assets/mylocation.svg";
+import closeIcon from "../../assets/close.svg";
 
 import FloatingIcons from "../../components/floating-icons/FloatingIcons";
 import LocationConfirmModal from "../../components/location-confirm-modal/LocationConfirmModal";
@@ -50,6 +51,7 @@ function HeroSection() {
   const [locationErrorMessage, setLocationErrorMessage] = useState("");
   const [locationErrorKey, setLocationErrorKey] = useState(0);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const visibleSuggestions = suggestions.filter((s) => {
     const name = `${s.display_name || ""} ${s.place_name || ""}`.toLowerCase();
     return !name.includes("obilaznica");
@@ -77,6 +79,7 @@ function HeroSection() {
   useEffect(() => {
     const media = window.matchMedia("(max-width: 480px)");
     const handleChange = () => {
+      setIsMobileViewport(media.matches);
       if (media.matches) {
         if (!inputRef.current) return;
         inputRef.current.value = "";
@@ -103,6 +106,20 @@ function HeroSection() {
       }
     };
   }, [isMobileSearchOpen]);
+
+  useEffect(() => {
+    if (!isMobileViewport) return;
+    if (!inputRef.current) return;
+    if (isMobileSearchOpen) {
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 0);
+      return;
+    }
+    inputRef.current.blur();
+  }, [isMobileSearchOpen, isMobileViewport]);
 
   useEffect(() => {
     loadMapbox()
@@ -197,10 +214,21 @@ function HeroSection() {
 
   function handleInputFocus() {
     if (!inputRef.current) return;
-    if (window.matchMedia("(max-width: 480px)").matches) {
+    if (isMobileViewport && !isMobileSearchOpen) {
       setIsMobileSearchOpen(true);
+      inputRef.current.blur();
+      return;
     }
     handleInput({ target: { value: inputRef.current.value } });
+  }
+
+  function handleInputPointerDown(e) {
+    if (!isMobileViewport || isMobileSearchOpen) return;
+    e.preventDefault();
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
+    setIsMobileSearchOpen(true);
   }
 
   function stopGeoWatch() {
@@ -365,6 +393,14 @@ function HeroSection() {
             data-loading={loadingSuggestions}
             data-locating={isLocating}
           >
+            <button
+              className="hero__search-cancel"
+              type="button"
+              onClick={() => setIsMobileSearchOpen(false)}
+              aria-label="Zatvori"
+            >
+              <img src={closeIcon} alt="" />
+            </button>
             <div className="hero__search-row">
               <div className="hero__search-field">
                 <img src={pin} alt="" className="hero__search-pin" />
@@ -374,6 +410,9 @@ function HeroSection() {
                   placeholder="Unesite adresu isporuke"
                   onChange={handleInput}
                   onFocus={handleInputFocus}
+                  onPointerDown={handleInputPointerDown}
+                  readOnly={isMobileViewport && !isMobileSearchOpen}
+                  tabIndex={isMobileViewport && !isMobileSearchOpen ? -1 : 0}
                   autoComplete="off"
                   disabled={!mapsReady}
                 />
@@ -385,13 +424,6 @@ function HeroSection() {
                   <img src={mylocation} alt="" />
                 </button>
               </div>
-              <button
-                className="hero__search-cancel"
-                type="button"
-                onClick={() => setIsMobileSearchOpen(false)}
-              >
-                Odustani
-              </button>
             </div>
             <button
               className="hero__search-geo"

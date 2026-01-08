@@ -7,6 +7,7 @@ import {
   isPointInDeliveryZone,
 } from "../../utils/addressValidation";
 import "./LocationConfirmModal.css";
+import closeIcon from "../../assets/close.svg";
 
 function LocationConfirmModal({ isOpen, address, coords, onClose, onConfirm }) {
   const mapRef = useRef(null);
@@ -220,7 +221,7 @@ function LocationConfirmModal({ isOpen, address, coords, onClose, onConfirm }) {
     <div className="lc-overlay">
       <div className="lc-modal">
         <button className="lc-close" type="button" onClick={onClose}>
-          x
+          <img src={closeIcon} alt="" />
         </button>
         <h2>Da li je ovo tačna lokacija za dostavu?</h2>
         <div className="lc-subtitle">Proveri pin na mapi i potvrdi adresu.</div>
