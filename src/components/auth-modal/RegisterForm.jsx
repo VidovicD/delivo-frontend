@@ -25,9 +25,10 @@ function RegisterForm({
   otpLocked,
   onResendOtp,
 }) {
-  const minutesLeft = otpExpiresAt
-    ? Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 60000))
-    : 0;
+ // const minutesLeft = otpExpiresAt
+ //   ? Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 60000))
+  //  : 0;
+  // iznad je mrtav kod vrv jer se codex zaustavio zbog potrosenih kredita pa ne moze deploy da prodje
   const registerEmailError = registerTouched.email
     ? !registerEmail
       ? "Unesite email adresu."
@@ -79,13 +80,14 @@ function RegisterForm({
     "Lozinke se ne poklapaju.",
     "Popunite sva polja.",
   ];
-  const registerFieldErrors = [
-    registerEmailError,
-    registerOtpError,
-    registerNameError,
-    registerPasswordError,
-    registerPasswordConfirmError,
-  ].filter(Boolean);
+ // const registerFieldErrors = [
+  //  registerEmailError,
+  //  registerOtpError,
+  //  registerNameError,
+  //  registerPasswordError,
+  //  registerPasswordConfirmError,
+ // ].filter(Boolean);
+    // iznad je mrtav kod vrv jer se codex zaustavio zbog potrosenih kredita pa ne moze deploy da prodje
   const showFormError =
     formError && !registerValidationMessages.includes(formError);
 

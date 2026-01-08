@@ -9,7 +9,7 @@ import kamion from "../../assets/kamion.png";
 import FloatingIcons from "../floating-icons/FloatingIcons";
 
 const ACCESS_KEY = "delivo_access_granted";
-const ACCESS_PASSWORDS = ["260424", "676767"];
+const ACCESS_PASSWORDS = ["260424", "sixseven"];
 const TARGET_DATE = new Date("2026-07-01T00:00:00");
 
 function MaintenanceOverlay() {
