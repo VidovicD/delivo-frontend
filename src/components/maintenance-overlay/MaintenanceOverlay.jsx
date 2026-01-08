@@ -53,10 +53,22 @@ function MaintenanceOverlay() {
     };
   }, []);
 
+  function grantAccess() {
+    if (ACCESS_PASSWORDS.includes(password)) {
+      localStorage.setItem(ACCESS_KEY, "true");
+      window.location.reload();
+    }
+  }
+
   function handleKeyDown(e) {
     if (e.key !== "Enter") return;
+    grantAccess();
+  }
 
-    if (ACCESS_PASSWORDS.includes(password)) {
+  function handleChange(e) {
+    const value = e.target.value;
+    setPassword(value);
+    if (ACCESS_PASSWORDS.includes(value)) {
       localStorage.setItem(ACCESS_KEY, "true");
       window.location.reload();
     }
@@ -110,7 +122,7 @@ function MaintenanceOverlay() {
             type="password"
             placeholder="Unesite pristupnu šifru"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handleChange}
             onKeyDown={handleKeyDown}
             autoFocus
           />
