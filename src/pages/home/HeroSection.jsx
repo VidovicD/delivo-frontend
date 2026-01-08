@@ -362,6 +362,8 @@ function HeroSection() {
               isMobileSearchOpen ? " hero__search--fullscreen" : ""
             }`}
             ref={searchRef}
+            data-loading={loadingSuggestions}
+            data-locating={isLocating}
           >
             <div className="hero__search-row">
               <div className="hero__search-field">
