@@ -9,7 +9,7 @@ import kamion from "../../assets/kamion.png";
 import FloatingIcons from "../floating-icons/FloatingIcons";
 
 const ACCESS_KEY = "delivo_access_granted";
-const ACCESS_PASSWORD = "260424";
+const ACCESS_PASSWORDS = ["260424", "676767"];
 const TARGET_DATE = new Date("2026-07-01T00:00:00");
 
 function MaintenanceOverlay() {
@@ -22,6 +22,9 @@ function MaintenanceOverlay() {
   });
 
   useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
 
@@ -31,6 +34,7 @@ function MaintenanceOverlay() {
 
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        clearInterval(interval);
         return;
       }
 
@@ -44,15 +48,15 @@ function MaintenanceOverlay() {
 
     return () => {
       clearInterval(interval);
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
     };
   }, []);
 
   function handleKeyDown(e) {
     if (e.key !== "Enter") return;
 
-    if (password === ACCESS_PASSWORD) {
+    if (ACCESS_PASSWORDS.includes(password)) {
       localStorage.setItem(ACCESS_KEY, "true");
       window.location.reload();
     }
