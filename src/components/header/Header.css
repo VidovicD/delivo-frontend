@@ -175,6 +175,16 @@
     box-shadow: none;
   }
 
+  .header--home {
+    position: fixed;
+    inset: 0 0 auto 0;
+    background: transparent;
+  }
+
+  body.is-mobile-search-open .header--home {
+    display: none;
+  }
+
   .header--scrolled {
     box-shadow: none;
   }

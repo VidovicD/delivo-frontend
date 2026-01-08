@@ -82,13 +82,30 @@ export async function reverseMapboxGeocode({ lng, lat }) {
     `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json`
   );
   url.searchParams.set("access_token", token);
-  url.searchParams.set("limit", "1");
+  url.searchParams.set("limit", "5");
   url.searchParams.set("types", "address");
   url.searchParams.set("language", "sr");
 
   const response = await fetch(url.toString());
   if (!response.ok) return "";
   const data = await response.json();
-  const feature = Array.isArray(data.features) ? data.features[0] : null;
-  return feature?.place_name || "";
+  const features = Array.isArray(data.features) ? data.features : [];
+  const withStreet = features.find((feature) => {
+    const text = feature?.text_sr || feature?.text || "";
+    return /\p{L}/u.test(text) && !/^\d+$/.test(text.trim());
+  });
+  const feature = withStreet || features[0] || null;
+  if (!feature) return "";
+  const featureText = feature.text_sr || feature.text || "";
+  if (feature.address && featureText) {
+    return `${featureText} ${feature.address}`;
+  }
+  if (feature.place_name) {
+    const parts = feature.place_name.split(",").map((part) => part.trim());
+    const namedPart = parts.find((part) =>
+      /[a-zA-Z\u00C0-\u017F]/.test(part)
+    );
+    return namedPart || feature.place_name;
+  }
+  return feature.text || "";
 }

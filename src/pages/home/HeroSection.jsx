@@ -23,6 +23,8 @@ import pin from "../../assets/pin.png";
 import mylocation from "../../assets/mylocation.svg";
 
 import FloatingIcons from "../../components/floating-icons/FloatingIcons";
+import LocationConfirmModal from "../../components/location-confirm-modal/LocationConfirmModal";
+import LocationErrorModal from "../../components/location-error-modal/LocationErrorModal";
 
 function HeroSection() {
   const navigate = useNavigate();
@@ -33,6 +35,8 @@ function HeroSection() {
   const requestRef = useRef(0);
   const debounceRef = useRef(null);
   const cacheRef = useRef(new Map());
+  const geoWatchRef = useRef(null);
+  const geoTimeoutRef = useRef(null);
   const cacheTtlMs = 5 * 60 * 1000;
 
   const [mapsReady, setMapsReady] = useState(false);
@@ -40,10 +44,65 @@ function HeroSection() {
   const [addressError, setAddressError] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [locationModalData, setLocationModalData] = useState(null);
+  const [locationErrorOpen, setLocationErrorOpen] = useState(false);
+  const [locationErrorMessage, setLocationErrorMessage] = useState("");
+  const [locationErrorKey, setLocationErrorKey] = useState(0);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const visibleSuggestions = suggestions.filter((s) => {
     const name = `${s.display_name || ""} ${s.place_name || ""}`.toLowerCase();
     return !name.includes("obilaznica");
   });
+
+  useEffect(() => {
+    if (!isMobileSearchOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("is-mobile-search-open");
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.classList.remove("is-mobile-search-open");
+    };
+  }, [isMobileSearchOpen]);
+
+  useEffect(() => {
+    if (!inputRef.current) return;
+    inputRef.current.value = "";
+    setSuggestions([]);
+    setAddressError("");
+    setLoadingSuggestions(false);
+  }, [isMobileSearchOpen]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 480px)");
+    const handleChange = () => {
+      if (media.matches) {
+        if (!inputRef.current) return;
+        inputRef.current.value = "";
+        setSuggestions([]);
+        setAddressError("");
+        setLoadingSuggestions(false);
+        return;
+      }
+      if (isMobileSearchOpen) {
+        setIsMobileSearchOpen(false);
+      }
+    };
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+    } else {
+      media.addListener(handleChange);
+    }
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener("change", handleChange);
+      } else {
+        media.removeListener(handleChange);
+      }
+    };
+  }, [isMobileSearchOpen]);
 
   useEffect(() => {
     loadMapbox()
@@ -59,6 +118,7 @@ function HeroSection() {
       setAddressError("");
       setLoadingSuggestions(false);
       setIsLocating(false);
+      stopGeoWatch();
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -137,64 +197,120 @@ function HeroSection() {
 
   function handleInputFocus() {
     if (!inputRef.current) return;
+    if (window.matchMedia("(max-width: 480px)").matches) {
+      setIsMobileSearchOpen(true);
+    }
     handleInput({ target: { value: inputRef.current.value } });
+  }
+
+  function stopGeoWatch() {
+    if (geoWatchRef.current !== null) {
+      navigator.geolocation.clearWatch(geoWatchRef.current);
+      geoWatchRef.current = null;
+    }
+    if (geoTimeoutRef.current) {
+      clearTimeout(geoTimeoutRef.current);
+      geoTimeoutRef.current = null;
+    }
+  }
+
+  function showLocationError(message) {
+    setLocationErrorMessage(message);
+    setLocationErrorKey((prev) => prev + 1);
+    setLocationErrorOpen(true);
   }
 
   async function handleUseLocation() {
     if (!mapsReady) return;
 
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
+    stopGeoWatch();
 
-    setAddressError("");
-    setSuggestions([]);
     setLoadingSuggestions(true);
     setIsLocating(true);
 
     if (!navigator.geolocation) {
-      setAddressError("Lokacija nije dostupna.");
       setLoadingSuggestions(false);
       setIsLocating(false);
       return;
     }
 
+    let bestAccuracy = Infinity;
+    let gotFirst = false;
+
+    const applyCoords = async (coords) => {
+      const lat = coords?.latitude;
+      const lng = coords?.longitude;
+      if (typeof lat !== "number" || typeof lng !== "number") {
+        return false;
+      }
+      if (!isPointInDeliveryZone({ lat, lng })) {
+        showLocationError("Dostava nije dostupna na ovoj lokaciji.");
+        return false;
+      }
+
+      const placeName = await reverseMapboxGeocode({ lng, lat });
+      if (!placeName) {
+        return false;
+      }
+
+      setSuggestions([]);
+      setLocationModalData({ address: placeName, lat, lng });
+      setLocationModalOpen(true);
+      return true;
+    };
+
+    const finishWithError = () => {
+      showLocationError("Lokacija nije dostupna.");
+      setLoadingSuggestions(false);
+      setIsLocating(false);
+      stopGeoWatch();
+    };
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const lat = pos?.coords?.latitude;
-        const lng = pos?.coords?.longitude;
-        if (typeof lat !== "number" || typeof lng !== "number") {
-          setAddressError("Lokacija nije dostupna.");
+        const coords = pos?.coords;
+        const accuracy =
+          typeof coords?.accuracy === "number" ? coords.accuracy : Infinity;
+        bestAccuracy = accuracy;
+
+        const applied = await applyCoords(coords);
+        if (applied) {
+          gotFirst = true;
           setLoadingSuggestions(false);
           setIsLocating(false);
-          return;
         }
 
-        const placeName = await reverseMapboxGeocode({ lng, lat });
-        if (!placeName) {
-          setAddressError("Lokacija nije dostupna.");
-          setLoadingSuggestions(false);
-          setIsLocating(false);
-          return;
-        }
-
-        setSuggestions([
-          {
-            id: "current-location",
-            display_name: placeName,
-            place_name: placeName,
-            center: { lng, lat },
+        geoWatchRef.current = navigator.geolocation.watchPosition(
+          async (nextPos) => {
+            const nextCoords = nextPos?.coords;
+            const nextAccuracy =
+              typeof nextCoords?.accuracy === "number"
+                ? nextCoords.accuracy
+                : Infinity;
+            if (nextAccuracy >= bestAccuracy) return;
+            bestAccuracy = nextAccuracy;
+            await applyCoords(nextCoords);
           },
-        ]);
-        setLoadingSuggestions(false);
-        setIsLocating(false);
+          () => {
+            if (!gotFirst) {
+              finishWithError();
+            }
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+
+        geoTimeoutRef.current = setTimeout(() => {
+          if (geoWatchRef.current !== null) {
+            navigator.geolocation.clearWatch(geoWatchRef.current);
+            geoWatchRef.current = null;
+          }
+          if (!gotFirst) {
+            finishWithError();
+          }
+        }, 5000);
       },
-      () => {
-        setAddressError("Lokacija nije dostupna.");
-        setLoadingSuggestions(false);
-        setIsLocating(false);
-      },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      finishWithError,
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   }
 
@@ -202,6 +318,9 @@ function HeroSection() {
     if (!mapsReady) return;
 
     if (!suggestion?.place_name || !suggestion?.center) return;
+
+    stopGeoWatch();
+    setIsMobileSearchOpen(false);
 
     if (
       !isPointInDeliveryZone({
@@ -238,24 +357,52 @@ function HeroSection() {
             <p>Dostava svega što vam je potrebno.</p>
           </div>
 
-          <div className="hero__search" ref={searchRef}>
-            <img src={pin} alt="" className="hero__search-pin" />
-
-            <input
-              ref={inputRef}
-              className="hero__search-input"
-              placeholder="Unesite adresu isporuke…"
-              onChange={handleInput}
-              onFocus={handleInputFocus}
-              autoComplete="off"
-                disabled={!mapsReady}
-              />
+          <div
+            className={`hero__search${
+              isMobileSearchOpen ? " hero__search--fullscreen" : ""
+            }`}
+            ref={searchRef}
+          >
+            <div className="hero__search-row">
+              <div className="hero__search-field">
+                <img src={pin} alt="" className="hero__search-pin" />
+                <input
+                  ref={inputRef}
+                  className="hero__search-input"
+                  placeholder="Unesite adresu isporuke"
+                  onChange={handleInput}
+                  onFocus={handleInputFocus}
+                  autoComplete="off"
+                  disabled={!mapsReady}
+                />
+                <button
+                  className="hero__search-location"
+                  type="button"
+                  onClick={handleUseLocation}
+                >
+                  <img src={mylocation} alt="" />
+                </button>
+              </div>
+              <button
+                className="hero__search-cancel"
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+              >
+                Odustani
+              </button>
+            </div>
             <button
-              className="hero__search-location"
+              className="hero__search-geo"
               type="button"
               onClick={handleUseLocation}
             >
-              <img src={mylocation} alt="" />
+              <img src={mylocation} alt="" className="hero__search-geo-icon" />
+              <span className="hero__search-geo-text">
+                <span className="hero__search-geo-title">
+                  Koristi trenutnu lokaciju
+                </span>
+                <span className="hero__search-geo-subtitle">Preporuceno</span>
+              </span>
             </button>
 
             {visibleSuggestions.length > 0 && (
@@ -269,16 +416,6 @@ function HeroSection() {
                     {formatAddressDisplay(s.display_name || s.place_name)}
                   </button>
                 ))}
-              </div>
-            )}
-
-            {loadingSuggestions &&
-              visibleSuggestions.length === 0 &&
-              !addressError && (
-              <div className="hero__suggestions">
-                <button type="button" disabled>
-                  {isLocating ? "Tražim lokaciju..." : "Trazim adrese..."}
-                </button>
               </div>
             )}
 
@@ -296,9 +433,41 @@ function HeroSection() {
           </p>
         </div>
       </section>
+      <LocationConfirmModal
+        isOpen={locationModalOpen}
+        address={locationModalData?.address}
+        coords={
+          locationModalData
+            ? { lat: locationModalData.lat, lng: locationModalData.lng }
+            : null
+        }
+        onClose={() => {
+          setLocationModalOpen(false);
+          stopGeoWatch();
+        }}
+        onConfirm={async ({ address, lat, lng }) => {
+          await addAddressFromPlace({ address, lat, lng });
+          setLocationModalOpen(false);
+          navigate("/explore", { replace: true });
+        }}
+      />
+      <LocationErrorModal
+        key={locationErrorKey}
+        isOpen={locationErrorOpen}
+        message={locationErrorMessage}
+        onClose={() => {
+          setLocationErrorOpen(false);
+          setLocationErrorMessage("");
+        }}
+      />
     </section>
   );
 }
 
 export default HeroSection;
+
+
+
+
+
 

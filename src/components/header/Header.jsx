@@ -42,7 +42,7 @@ function Header({ session, authReady, onAuthOpen }) {
 
   if (isHome) {
     return (
-      <header className={`header${scrolled ? " header--scrolled" : ""}`}>
+      <header className={`header header--home${scrolled ? " header--scrolled" : ""}`}>
         <div className="header__left" />
         <div className="header__center" />
         <div className="header__right">

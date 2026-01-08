@@ -302,6 +302,9 @@ function AddAddressModal({
           const lngLat = markerRef.current.getLngLat();
           const rawNext = { lat: lngLat.lat, lng: lngLat.lng };
           const next = rawNext;
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter([next.lng, next.lat]);
+          }
           const nextInZone = isPointInDeliveryZone(next);
           setPinInZone(nextInZone);
           setPinPosition(next);
