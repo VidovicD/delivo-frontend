@@ -1,5 +1,4 @@
 import React from "react";
-import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
 
 function LoginForm({
   loginStep,
@@ -11,14 +10,33 @@ function LoginForm({
   setLoginTouched,
   loading,
   formError,
+  setFormError,
   isValidEmail,
   passwordRef,
   onNext,
   onSubmit,
   onBack,
-  showPassword,
-  setShowPassword,
 }) {
+  const loginEmailError =
+    loginTouched && (!loginValue || !isValidEmail(loginValue))
+      ? "Unesite ispravnu email adresu."
+      : "";
+  const loginEmailServerError =
+    formError === "Nalog ne postoji. Registrujte se.";
+  const loginPasswordServerError = formError === "Pogresna lozinka.";
+  const showLoginPasswordRequired =
+    !loginPasswordServerError && loginTouched && !loginPassword;
+  const loginPasswordError = showLoginPasswordRequired
+    ? "Lozinka je obavezna."
+    : "";
+  const loginValidationMessages = [
+    "Unesite ispravnu email adresu.",
+    "Lozinka je obavezna.",
+    "Pogresna lozinka.",
+  ];
+  const showFormError =
+    formError && !loginValidationMessages.includes(formError);
+
   return (
     <div className="auth-form">
       {loginStep === "value" && (
@@ -30,15 +48,22 @@ function LoginForm({
               value={loginValue}
               onChange={(e) => {
                 setLoginValue(e.target.value);
-                setLoginTouched(false);
+                if (formError) setFormError("");
               }}
               className={
-                loginTouched &&
-                (!loginValue || !isValidEmail(loginValue))
+                (loginTouched &&
+                  (!loginValue || !isValidEmail(loginValue))) ||
+                loginEmailServerError
                   ? "error"
                   : ""
               }
             />
+            {loginEmailError && (
+              <div className="field-error">{loginEmailError}</div>
+            )}
+            {showFormError && (
+              <div className="field-error">{formError}</div>
+            )}
           </div>
 
           <button
@@ -57,34 +82,32 @@ function LoginForm({
 
       {loginStep === "password" && (
         <>
-          <p className="auth-helper-text">
-            Unesite lozinku da biste se prijavili
-          </p>
-
           <div className="form-field">
             <label>Lozinka</label>
 
-            <div className="password-field">
-              <input
-                ref={passwordRef}
-                type={showPassword ? "text" : "password"}
-                value={loginPassword}
-                onChange={(e) => {
-                  setLoginPassword(e.target.value);
-                  setLoginTouched(false);
-                }}
-                className={loginTouched && !loginPassword ? "error" : ""}
-              />
-
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword((p) => !p)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOpen /> : <EyeClosed />}
-              </button>
-            </div>
+            <input
+              ref={passwordRef}
+              type="password"
+              value={loginPassword}
+              onChange={(e) => {
+                setLoginPassword(e.target.value);
+              }}
+              className={
+                showLoginPasswordRequired ||
+                loginPasswordServerError
+                  ? "error"
+                  : ""
+              }
+            />
+            {loginPasswordError && (
+              <div className="field-error">{loginPasswordError}</div>
+            )}
+            {loginPasswordServerError && (
+              <div className="field-error">{formError}</div>
+            )}
+            {showFormError && (
+              <div className="field-error">{formError}</div>
+            )}
           </div>
 
           <button
@@ -98,7 +121,7 @@ function LoginForm({
 
           <button
             type="button"
-            className="auth-link"
+            className="auth-link auth-link--no-spacing"
             onClick={onBack}
             disabled={loading}
           >
@@ -106,8 +129,6 @@ function LoginForm({
           </button>
         </>
       )}
-
-      {formError && <div className="error-text">{formError}</div>}
     </div>
   );
 }

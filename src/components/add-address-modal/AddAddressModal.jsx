@@ -15,6 +15,9 @@ import {
 } from "../../utils/addressValidation";
 
 import "./AddAddressModal.css";
+import pin from "../../assets/pin.png";
+import mylocation from "../../assets/mylocation.svg";
+import closeIcon from "../../assets/close.svg";
 
 function AddAddressModal({
   onClose,
@@ -47,6 +50,9 @@ function AddAddressModal({
   const [suggestions, setSuggestions] = useState([]);
   const [addressError, setAddressError] = useState("");
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [pendingAddress, setPendingAddress] = useState("");
   const [pinPosition, setPinPosition] = useState(null);
   const [pinInZone, setPinInZone] = useState(true);
@@ -236,6 +242,43 @@ function AddAddressModal({
     setPinPosition(center);
     setPinMoved(false);
   }, [mapsReady, initialAddress, pinPosition]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 480px)");
+    const handleChange = () => {
+      setIsMobileViewport(media.matches);
+      if (!media.matches && isMobileSearchOpen) {
+        setIsMobileSearchOpen(false);
+      }
+    };
+    handleChange();
+    if (media.addEventListener) {
+      media.addEventListener("change", handleChange);
+    } else {
+      media.addListener(handleChange);
+    }
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener("change", handleChange);
+      } else {
+        media.removeListener(handleChange);
+      }
+    };
+  }, [isMobileSearchOpen]);
+
+  useEffect(() => {
+    if (!isMobileViewport) return;
+    if (!inputRef.current) return;
+    if (isMobileSearchOpen) {
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 0);
+      return;
+    }
+    inputRef.current.blur();
+  }, [isMobileSearchOpen, isMobileViewport]);
 
   useEffect(() => {
     pinPositionRef.current = pinPosition;
@@ -462,12 +505,34 @@ function AddAddressModal({
     }, 300);
   }
 
+  function handleInputFocus() {
+    if (!inputRef.current) return;
+    if (isMobileViewport && !isMobileSearchOpen) {
+      setIsMobileSearchOpen(true);
+      inputRef.current.blur();
+      return;
+    }
+    handleInput({ target: { value: inputRef.current.value } });
+  }
+
+  function handleInputPointerDown(e) {
+    if (!isMobileViewport || isMobileSearchOpen) return;
+    e.preventDefault();
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
+    setIsMobileSearchOpen(true);
+  }
+
   async function handleSelect(suggestion) {
     if (!mapsReady) return;
     if (!suggestion?.place_name || !suggestion?.center) return;
 
     setSuggestions([]);
     setAddressError("");
+    if (isMobileSearchOpen) {
+      setIsMobileSearchOpen(false);
+    }
     setPendingAddress(suggestion.place_name);
     if (inputRef.current) {
       inputRef.current.value = formatAddressDisplay(suggestion.place_name);
@@ -485,6 +550,51 @@ function AddAddressModal({
     if (!initialAddress) {
       setAddressType("");
     }
+  }
+
+  async function handleUseLocation() {
+    if (!mapsReady) return;
+    if (!navigator.geolocation) return;
+
+    setLoadingSuggestions(true);
+    setIsLocating(true);
+    setSuggestions([]);
+    setAddressError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = pos?.coords;
+        const lat = coords?.latitude;
+        const lng = coords?.longitude;
+        setLoadingSuggestions(false);
+        setIsLocating(false);
+        if (typeof lat !== "number" || typeof lng !== "number") return;
+
+        const next = { lat, lng };
+        const inZone = isPointInDeliveryZone(next);
+        setPinInZone(inZone);
+        setPinPosition(next);
+        setPinMoved(true);
+        if (!inZone) {
+          setAddressError("Dostava je dostupna samo u zoni dostave.");
+        }
+
+        const address = await reverseMapboxGeocode({ lng, lat });
+        if (!address) return;
+        setPendingAddress(address);
+        if (isMobileSearchOpen) {
+          setIsMobileSearchOpen(false);
+        }
+        if (inputRef.current) {
+          inputRef.current.value = formatAddressDisplay(address);
+        }
+      },
+      () => {
+        setLoadingSuggestions(false);
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
   }
 
   function handleContinueFromAddress() {
@@ -589,41 +699,85 @@ function AddAddressModal({
 
         {step === "address" && (
           <>
-            <div className="aa-search">
-              <input
-                ref={inputRef}
-                className="aa-input"
-                placeholder="Naziv ulice i broj"
-                onChange={handleInput}
-                autoComplete="off"
-                disabled={!mapsReady}
-              />
-            {visibleSuggestions.length > 0 && (
-              <div className="aa-suggestions">
-                {visibleSuggestions.map((s, i) => (
+            <div
+              className={`hero__search aa-search${
+                isMobileSearchOpen ? " hero__search--fullscreen" : ""
+              }`}
+              data-loading={loadingSuggestions}
+              data-locating={isLocating}
+            >
+              <button
+                className="hero__search-cancel"
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                aria-label="Zatvori"
+              >
+                <img src={closeIcon} alt="" />
+              </button>
+              <div className="hero__search-row">
+                <div className="hero__search-field">
+                  <img src={pin} alt="" className="hero__search-pin" />
+                  <input
+                    ref={inputRef}
+                    className="hero__search-input"
+                    placeholder="Unesite adresu isporuke"
+                    onChange={handleInput}
+                    onFocus={handleInputFocus}
+                    onPointerDown={handleInputPointerDown}
+                    readOnly={isMobileViewport && !isMobileSearchOpen}
+                    tabIndex={isMobileViewport && !isMobileSearchOpen ? -1 : 0}
+                    autoComplete="off"
+                    disabled={!mapsReady}
+                  />
                   <button
-                    key={i}
+                    className="hero__search-location"
                     type="button"
-                    onClick={() => handleSelect(s)}
+                    onClick={handleUseLocation}
                   >
-                    {formatAddressDisplay(s.display_name || s.place_name)}
+                    <img src={mylocation} alt="" />
                   </button>
-                ))}
+                </div>
               </div>
-            )}
+              <button
+                className="hero__search-geo"
+                type="button"
+                onClick={handleUseLocation}
+              >
+                <img src={mylocation} alt="" className="hero__search-geo-icon" />
+                <span className="hero__search-geo-text">
+                  <span className="hero__search-geo-title">
+                    Koristi trenutnu lokaciju
+                  </span>
+                  <span className="hero__search-geo-subtitle">Preporuceno</span>
+                </span>
+              </button>
 
-            {loadingSuggestions &&
-              visibleSuggestions.length === 0 &&
-              !addressError && (
-              <div className="aa-suggestions">
-                <button type="button" disabled>
-                  Trazim adrese...
+              {visibleSuggestions.length > 0 && (
+                <div className="hero__suggestions">
+                  {visibleSuggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleSelect(s)}
+                    >
+                      {formatAddressDisplay(s.display_name || s.place_name)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {loadingSuggestions &&
+                visibleSuggestions.length === 0 &&
+                !addressError && (
+                <div className="hero__suggestions">
+                  <button type="button" disabled>
+                    Trazim adrese...
                   </button>
                 </div>
               )}
 
               {addressError && (
-                <div className="aa-suggestions">
+                <div className="hero__suggestions">
                   <button type="button" disabled>
                     {addressError}
                   </button>

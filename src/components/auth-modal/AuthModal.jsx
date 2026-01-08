@@ -1,4 +1,5 @@
 import "./AuthModal.css";
+import closeIcon from "../../assets/close.svg";
 
 import AuthSuccess from "./AuthSuccess";
 import OAuthButtons from "./OAuthButtons";
@@ -35,7 +36,6 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     otpAttemptsLeft,
 
     loading,
-    showPassword,
     formError,
   } = state;
 
@@ -52,13 +52,13 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
         tabIndex="-1"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
+                <button
           className="auth-close"
           type="button"
           disabled={loading}
           onClick={onClose}
         >
-          ✕
+          <img src={closeIcon} alt="Zatvori" />
         </button>
 
         {step === "success" && (
@@ -124,13 +124,12 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 setLoginTouched={setters.setLoginTouched}
                 loading={loading}
                 formError={formError}
+                setFormError={setters.setFormError}
                 isValidEmail={isValidEmail}
                 passwordRef={refs.passwordRef}
                 onNext={handlers.handleLoginNext}
                 onSubmit={handlers.handleLoginSubmit}
                 onBack={handlers.handleLoginBack}
-                showPassword={showPassword}
-                setShowPassword={setters.setShowPassword}
               />
             )}
 
@@ -144,6 +143,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 registerOtp={registerOtp}
                 otpExpiresAt={otpExpiresAt}
                 otpAttemptsLeft={otpAttemptsLeft}
+                otpLocked={state.otpLocked}
                 registerTouched={registerTouched}
                 setRegisterTouched={setters.setRegisterTouched}
                 setRegisterName={setters.setRegisterName}
@@ -153,6 +153,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 setRegisterOtp={setters.setRegisterOtp}
                 loading={loading}
                 formError={formError}
+                setFormError={setters.setFormError}
                 isValidEmail={isValidEmail}
                 nameRef={refs.nameRef}
                 emailRef={refs.emailRef}
@@ -185,13 +186,15 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
             )}
 
             {mode === "register" && (
-              <button
-                type="button"
-                className="auth-forgot"
-                onClick={() => handlers.switchMode("login")}
-              >
-                Imate nalog? Ulogujte se
-              </button>
+              <div className="auth-register-actions">
+                <button
+                  type="button"
+                  className="auth-forgot"
+                  onClick={() => handlers.switchMode("login")}
+                >
+                  Imate nalog? Ulogujte se
+                </button>
+              </div>
             )}
           </>
         )}
@@ -201,3 +204,4 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
 }
 
 export default AuthModal;
+

@@ -117,9 +117,21 @@ function Header({ session, authReady, onAuthOpen }) {
         )}
 
         {!isAuthenticated && (
-          <button className="header__btn" onClick={() => onAuthOpen("login")}>
-            Prijava / Registracija
-          </button>
+          <div className="header__actions">
+            <button
+              className="header__icon-btn"
+              type="button"
+              aria-label="Moj nalog"
+              onClick={() => onAuthOpen("login")}
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+                <path
+                  d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4.41 0-8 2.24-8 5v1h16v-1c0-2.76-3.59-5-8-5z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
         )}
 
         {isAuthenticated && (

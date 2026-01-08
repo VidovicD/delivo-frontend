@@ -10,7 +10,7 @@ export const getAuthErrorMessage = (err) => {
     return "Previse pokusaja. Sacekajte minut i pokusajte ponovo.";
 
   if (msg.includes("invalid login credentials"))
-    return "Pogresan email ili lozinka.";
+    return "Pogresna lozinka.";
 
   if (msg.includes("already") && msg.includes("registered"))
     return "Nalog sa ovom email adresom vec postoji.";

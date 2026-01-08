@@ -227,31 +227,85 @@
   height: 420px;
 }
 
-.aa-input {
-  width: 100%;
-  padding: 14px 44px 14px 20px;
-  border-radius: 999px;
-  background: var(--brand-neutral2);
+.hero__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 360px;
+  min-height: 52px;
+  background-color: var(--brand-neutral);
+  border-radius: 30px;
   border: 1px solid #00000020;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--brand-accent);
-  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-.aa-input::placeholder {
+.hero__search:focus-within {
+  border-color: var(--brand-accent);
+  box-shadow: inset 0 0 0 1px var(--brand-accent);
+}
+
+.hero__search-pin {
+  width: 30px;
+  height: 30px;
+  margin-inline: 16px;
+  flex-shrink: 0;
+}
+
+.hero__search-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.hero__search-field {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.hero__search-input {
+  font-family: "Inter", sans-serif;
+  width: 100%;
+  min-width: 0;
+  padding-block: 15px;
+  padding-right: 8px;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.hero__search-location {
+  width: 34px;
+  height: 34px;
+  margin-inline: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.hero__search-location img {
+  width: 26px;
+  height: 26px;
+}
+
+.hero__search-cancel,
+.hero__search-geo {
+  display: none;
+}
+
+.hero__search-input::placeholder {
   color: var(--brand-accent);
   opacity: 0.4;
 }
 
-.aa-input:focus::placeholder {
-  color: transparent;
-}
-
-.aa-input:focus {
-  border-color: var(--brand-accent);
-  box-shadow: inset 0 0 0 1px var(--brand-accent);
-}
 
 .aa-details {
   width: 100%;
@@ -347,7 +401,7 @@
   box-shadow: none;
 }
 
-.aa-suggestions {
+.hero__suggestions {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
@@ -359,7 +413,7 @@
   z-index: 20;
 }
 
-.aa-suggestions button {
+.hero__suggestions button {
   width: 100%;
   padding: 12px 16px;
   border: none;
@@ -371,7 +425,7 @@
   color: var(--brand-accent);
 }
 
-.aa-suggestions button:hover {
+.hero__suggestions button:hover {
   background: rgba(0, 0, 0, 0.05);
 }
 
@@ -411,8 +465,150 @@
     pointer-events: auto;
   }
 
-  .aa-input {
-    font-size: 15px;
+  .aa-search {
+    max-width: 300px;
+  }
+
+  .hero__search {
+    width: 100%;
+    max-width: 300px;
+    min-height: 46px;
+    border-radius: 24px;
+  }
+
+  .hero__search:focus-within {
+    border-color: #00000020;
+    box-shadow: none;
+  }
+
+  .hero__search-pin {
+    width: 22px;
+    height: 22px;
+    margin-inline: 12px;
+  }
+
+  .hero__search-input {
+    padding-block: 12px;
+    padding-right: 14px;
+  }
+
+  .hero__search-location {
+    width: 28px;
+    height: 28px;
+    margin-inline: 12px;
+  }
+
+  .hero__search-location img {
+    width: 22px;
+    height: 22px;
+  }
+
+  .hero__search--fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    width: 100%;
+    max-width: none;
+    min-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    background: var(--brand-primary);
+    padding: 24px 16px 24px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .hero__search--fullscreen .hero__search-row {
+    background: transparent;
+    border: none;
+    margin-top: 6px;
+  }
+
+  .hero__search--fullscreen .hero__search-input {
+    flex: 1;
+  }
+
+  .hero__search--fullscreen .hero__search-field {
+    background-color: var(--brand-neutral);
+    border-radius: 30px;
+    border: 1px solid #00000020;
+    min-height: 52px;
+  }
+
+  .hero__search--fullscreen .hero__search-field:focus-within {
+    border-color: var(--brand-accent);
+    box-shadow: inset 0 0 0 1px var(--brand-accent);
+  }
+
+  .hero__search--fullscreen .hero__search-location {
+    display: none;
+  }
+
+  .hero__search--fullscreen .hero__search-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0px 6px;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    color: var(--brand-accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: static;
+    align-self: flex-end;
+    margin-bottom: 8px;
+  }
+
+  .hero__search--fullscreen .hero__search-cancel img {
+    width: 26px;
+    height: auto;
+  }
+
+  .hero__search--fullscreen .hero__search-geo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: none;
+    background: var(--brand-neutral);
+    color: var(--brand-accent);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .hero__search-geo-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .hero__search-geo-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+  }
+
+  .hero__search-geo-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .hero__search-geo-subtitle {
+    font-size: 12px;
+    opacity: 0.6;
+    font-weight: 600;
+  }
+
+  .hero__search--fullscreen .hero__suggestions {
+    position: static;
+    margin-top: 12px;
   }
 
   .aa-map {

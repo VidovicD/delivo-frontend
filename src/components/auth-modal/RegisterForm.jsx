@@ -15,17 +15,79 @@ function RegisterForm({
   setRegisterTouched,
   loading,
   formError,
+  setFormError,
   isValidEmail,
   nameRef,
   emailRef,
   onSubmit,
   otpExpiresAt,
   otpAttemptsLeft,
+  otpLocked,
   onResendOtp,
 }) {
   const minutesLeft = otpExpiresAt
     ? Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 60000))
     : 0;
+  const registerEmailError = registerTouched.email
+    ? !registerEmail
+      ? "Unesite email adresu."
+      : !isValidEmail(registerEmail)
+        ? "Email adresa nije validna."
+        : ""
+    : "";
+  const registerOtpError =
+    registerTouched.otp && !registerOtp ? "Unesite kod." : "";
+  const registerOtpServerErrors = [
+    "Pogresan kod.",
+    "Pogrešan kod.",
+    "Kod je istekao. Zatrazite novi kod.",
+    "Previse pokusaja. Sacekajte 5 minuta pa pokusajte ponovo.",
+    "Kod je vec poslat. Sacekajte malo ili pokusajte ponovo.",
+    "Email adresa nije validna.",
+    "Doslo je do greske. Pokusajte ponovo.",
+  ];
+  const registerOtpServerError = registerOtpServerErrors.includes(formError);
+  const registerEmailServerError =
+    formError ===
+    "Nalog sa tim emailom vec postoji. Molimo vas, ulogujte se.";
+  const showRegisterEmailRequired =
+    !registerEmailServerError && registerEmailError;
+  const registerNameError =
+    registerTouched.name && !registerName ? "Ime je obavezno." : "";
+  const registerPasswordError = registerTouched.password
+    ? !registerPassword
+      ? "Lozinka je obavezna."
+      : registerPassword.length < 6
+        ? "Lozinka mora imati najmanje 6 karaktera."
+        : ""
+    : "";
+  const registerPasswordConfirmError = registerTouched.passwordConfirm
+    ? !registerPasswordConfirm
+      ? "Potvrda lozinke je obavezna."
+      : registerPassword !== registerPasswordConfirm
+        ? "Lozinke se ne poklapaju."
+        : ""
+    : "";
+  const registerValidationMessages = [
+    "Unesite email adresu.",
+    "Email adresa nije validna.",
+    "Unesite kod.",
+    "Ime je obavezno.",
+    "Lozinka je obavezna.",
+    "Lozinka mora imati najmanje 6 karaktera.",
+    "Potvrda lozinke je obavezna.",
+    "Lozinke se ne poklapaju.",
+    "Popunite sva polja.",
+  ];
+  const registerFieldErrors = [
+    registerEmailError,
+    registerOtpError,
+    registerNameError,
+    registerPasswordError,
+    registerPasswordConfirmError,
+  ].filter(Boolean);
+  const showFormError =
+    formError && !registerValidationMessages.includes(formError);
 
   return (
     <div className="auth-form">
@@ -39,22 +101,28 @@ function RegisterForm({
               value={registerEmail}
               onChange={(e) => {
                 setRegisterEmail(e.target.value);
-                setRegisterTouched(false);
               }}
               className={
-                registerTouched &&
-                (!registerEmail || !isValidEmail(registerEmail))
+                (registerTouched.email &&
+                  (!registerEmail || !isValidEmail(registerEmail))) ||
+                registerEmailServerError
                   ? "error"
                   : ""
               }
             />
+            {showRegisterEmailRequired && (
+              <div className="field-error">{registerEmailError}</div>
+            )}
+            {showFormError && (
+              <div className="field-error">{formError}</div>
+            )}
           </div>
 
           <button
             className="auth-submit"
             type="button"
             onClick={() => {
-              setRegisterTouched(true);
+              setRegisterTouched((t) => ({ ...t, email: true }));
               onSubmit();
             }}
             disabled={loading}
@@ -62,7 +130,6 @@ function RegisterForm({
             Nastavi
           </button>
 
-          {formError && <div className="error-text">{formError}</div>}
         </>
       )}
 
@@ -76,10 +143,14 @@ function RegisterForm({
               value={registerName}
               onChange={(e) => {
                 setRegisterName(e.target.value);
-                setRegisterTouched(false);
               }}
-              className={registerTouched && !registerName ? "error" : ""}
+              className={
+                registerTouched.name && !registerName ? "error" : ""
+              }
             />
+            {registerNameError && (
+              <div className="field-error">{registerNameError}</div>
+            )}
           </div>
 
           <div className="form-field">
@@ -92,12 +163,17 @@ function RegisterForm({
               spellCheck={false}
               onChange={(e) => {
                 setRegisterPassword(e.target.value);
-                setRegisterTouched(false);
               }}
               className={
-                registerTouched && !registerPassword ? "error" : ""
+                registerTouched.password &&
+                (!registerPassword || registerPassword.length < 6)
+                  ? "error"
+                  : ""
               }
             />
+            {registerPasswordError && (
+              <div className="field-error">{registerPasswordError}</div>
+            )}
           </div>
 
           <div className="form-field">
@@ -110,19 +186,35 @@ function RegisterForm({
               spellCheck={false}
               onChange={(e) => {
                 setRegisterPasswordConfirm(e.target.value);
-                setRegisterTouched(false);
               }}
               className={
-                registerTouched && !registerPasswordConfirm ? "error" : ""
+                registerTouched.passwordConfirm &&
+                (!registerPasswordConfirm ||
+                  registerPassword !== registerPasswordConfirm)
+                  ? "error"
+                  : ""
               }
             />
+            {registerPasswordConfirmError && (
+              <div className="field-error">
+                {registerPasswordConfirmError}
+              </div>
+            )}
+            {showFormError && (
+              <div className="field-error">{formError}</div>
+            )}
           </div>
 
           <button
             className="auth-submit"
             type="button"
             onClick={() => {
-              setRegisterTouched(true);
+              setRegisterTouched((t) => ({
+                ...t,
+                name: true,
+                password: true,
+                passwordConfirm: true,
+              }));
               onSubmit();
             }}
             disabled={loading}
@@ -130,7 +222,6 @@ function RegisterForm({
             Registruj se
           </button>
 
-          {formError && <div className="error-text">{formError}</div>}
         </>
       )}
 
@@ -138,11 +229,6 @@ function RegisterForm({
         <>
           <p className="auth-helper-text">
             Poslat je kod na email <strong>{registerEmail}</strong>
-          </p>
-
-          <p className="auth-helper-text">
-            Kod vazi jos {minutesLeft} min | Preostali pokusaji:{" "}
-            {otpAttemptsLeft}
           </p>
 
           <div className="form-field">
@@ -153,34 +239,44 @@ function RegisterForm({
               value={registerOtp}
               onChange={(e) => {
                 setRegisterOtp(e.target.value);
-                setRegisterTouched(false);
+                if (formError && !otpLocked) setFormError("");
               }}
-              className={registerTouched && !registerOtp ? "error" : ""}
+              className={
+                (registerTouched.otp && !registerOtp) ||
+                registerOtpServerError
+                  ? "error"
+                  : ""
+              }
             />
+            {registerOtpError && !registerOtpServerError && (
+              <div className="field-error">{registerOtpError}</div>
+            )}
+            {showFormError && (
+              <div className="field-error">{formError}</div>
+            )}
           </div>
 
           <button
             className="auth-submit"
             type="button"
             onClick={() => {
-              setRegisterTouched(true);
+              setRegisterTouched((t) => ({ ...t, otp: true }));
               onSubmit();
             }}
-            disabled={loading}
+            disabled={loading || otpLocked}
           >
             Potvrdi kod
           </button>
 
           <button
             type="button"
-            className="auth-link"
+            className="auth-link auth-link--compact"
             onClick={onResendOtp}
-            disabled={loading}
+            disabled={loading || otpLocked}
           >
-            Posalji novi kod
+            Kliknite ovde da posaljete novi kod
           </button>
 
-          {formError && <div className="error-text">{formError}</div>}
         </>
       )}
     </div>
