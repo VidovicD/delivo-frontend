@@ -452,7 +452,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   };
 
   const handleRegisterResendOtp = async () => {
-    const otpLockedNow = Boolean(otpLockoutUntil && Date.now() < otpLockoutUntil);
     if (loading) return;
     
     // Check if cooldown is still active
@@ -553,9 +552,6 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
           setLoading(false);
           return;
         }
-
-        setLoading(false);
-        return;
       }
       if (msg && !msg.includes("Edge Function")) {
         if (msg.includes("Previse pokusaja") && e?.lockoutSeconds) {
