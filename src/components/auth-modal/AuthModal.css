@@ -385,6 +385,13 @@
   cursor: not-allowed;
 }
 
+.auth-link--warning {
+  color: var(--brand-warning);
+  opacity: 0.85 !important;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .error-text {
   font-size: 13px;
   font-weight: 600;
@@ -416,6 +423,21 @@
   text-align: center;
   align-self: center;
   opacity: 0.85;
+}
+
+.resend-notice {
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--brand-accent) !important;
+  cursor: default;
+  text-align: center;
+  align-self: center;
+  opacity: 0.85 !important;
+  animation: successFadeIn 0.3s ease;
 }
 
 .success-text {

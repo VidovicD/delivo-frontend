@@ -32,6 +32,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
   const [cooldownMessage, setCooldownMessage] = useState("");
+  const [resendNotice, setResendNotice] = useState("");
 
   const [loginTouched, setLoginTouched] = useState(false);
   const [registerTouched, setRegisterTouched] = useState({
@@ -90,6 +91,70 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     return `${mins} min ${secs} s`;
   };
 
+  const applyCooldownFromResponse = (resp, email) => {
+    try {
+      const data = resp?._serverData || resp || {};
+      if (data?.code_sent_at) {
+        const sentAt = new Date(data.code_sent_at).getTime();
+        const cooldown = sentAt + (data?.resend_cooldown_seconds || data?.waitSeconds || 60) * 1000;
+        setResendCooldownUntil(cooldown);
+        return cooldown;
+      }
+      // fallback to localStorage
+      const raw = localStorage.getItem(`pending_registration:${email}`);
+      if (raw) {
+        const stored = JSON.parse(raw);
+        if (stored?.code_sent_at) {
+          const sentAt = new Date(stored.code_sent_at).getTime();
+          const cooldown = sentAt + (data?.resend_cooldown_seconds || data?.waitSeconds || 60) * 1000;
+          setResendCooldownUntil(cooldown);
+          return cooldown;
+        }
+      }
+      // last resort: use waitSeconds or default
+      const wait = data?.waitSeconds !== undefined ? data.waitSeconds : 60;
+      const fallback = Date.now() + wait * 1000;
+      setResendCooldownUntil(fallback);
+      return fallback;
+    } catch (e) {
+      const wait = resp?.waitSeconds !== undefined ? resp.waitSeconds : 60;
+      const fallback = Date.now() + wait * 1000;
+      setResendCooldownUntil(fallback);
+      return fallback;
+    }
+  };
+
+  // Kada korisnik unese email ili otvori email korak, pokušaj da prefetch-uješ
+  // server timestamps tako da UI bude uvek sinhronizovan (fallback postoji).
+  useEffect(() => {
+    if (!registerEmail || registerStep !== "email") return;
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("pending-status", { body: { email: registerEmail } });
+        if (!mounted) return;
+        if (data && data.code_sent_at) {
+          // Persist server timestamps to localStorage (but don't show cooldown yet)
+          try {
+            const store = {
+              code_sent_at: data.code_sent_at,
+              code_expires_at: data.code_expires_at,
+            };
+            localStorage.setItem(`pending_registration:${registerEmail}`, JSON.stringify(store));
+          } catch (e) {}
+        } else {
+          // Server has no pending record — clear local fallback so UI won't show stale countdown
+          try { localStorage.removeItem(`pending_registration:${registerEmail}`); } catch (e) {}
+          setResendCooldownUntil(null);
+          setCooldownMessage("");
+        }
+      } catch (e) {
+        // Ne prikazujemo grešku korisniku; fallback logika ostaje
+      }
+    })();
+    return () => { mounted = false; };
+  }, [registerEmail, registerStep]);
+
   useEffect(() => {
     if (!otpLockoutUntil) {
       setFormError((prev) => {
@@ -138,6 +203,11 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       return;
     }
 
+    // Only update cooldown message if it's already set (user clicked during cooldown)
+    if (!cooldownMessage) {
+      return;
+    }
+
     const updateCooldownMessage = () => {
       const remaining = resendCooldownUntil - Date.now();
       if (remaining <= 0) {
@@ -149,16 +219,13 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       const remainingSeconds = Math.ceil(remaining / 1000);
       const formattedTime = formatWaitTime(remainingSeconds);
       
-      setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+      setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
     };
-
-    // Odmah postavi poruku
-    updateCooldownMessage();
 
     const interval = setInterval(updateCooldownMessage, 1000);
 
     return () => clearInterval(interval);
-  }, [resendCooldownUntil]);
+  }, [resendCooldownUntil, cooldownMessage]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -278,13 +345,26 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       if (data?.waitSeconds !== undefined) {
         err.waitSeconds = data.waitSeconds;
       }
+      // Attach server fields for debugging
+      err._serverData = data;
       throw err;
     }
 
     setRegisterVerifyToken("");
     setOtpLockoutUntil(null);
     setResendCooldownUntil(null);
-    setOtpExpiresAt(Date.now() + (data.expiresIn || 600) * 1000);
+    // Persist server timestamps to localStorage so timers survive modal close/open
+    try {
+      const store = {
+        code_sent_at: data?.code_sent_at || new Date().toISOString(),
+        code_expires_at:
+          data?.code_expires_at || new Date(Date.now() + (data?.expiresIn || 600) * 1000).toISOString(),
+      };
+      localStorage.setItem(`pending_registration:${email}`, JSON.stringify(store));
+      setOtpExpiresAt(new Date(store.code_expires_at).getTime());
+    } catch (e) {
+      setOtpExpiresAt(Date.now() + (data.expiresIn || 600) * 1000);
+    }
     setOtpAttemptsLeft(5);
   };
 
@@ -356,14 +436,10 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         const formattedTime = formatWaitTime(e.lockoutSeconds);
         setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
       } else if (msg && (msg?.includes("Kod je vec poslat") || msg === "Kod je vec poslat.")) {
-        const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
-        const cooldownUntil = Date.now() + waitSeconds * 1000;
-        setResendCooldownUntil(cooldownUntil);
+        applyCooldownFromResponse(e, registerEmail);
       } else if (msg && !msg.includes("Edge Function")) {
         if (msg.includes("Kod je vec poslat")) {
-          const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
-          const cooldownUntil = Date.now() + waitSeconds * 1000;
-          setResendCooldownUntil(cooldownUntil);
+          applyCooldownFromResponse(e, registerEmail);
         } else {
           setFormError(msg);
         }
@@ -376,14 +452,19 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   };
 
   const handleRegisterResendOtp = async () => {
+    const otpLockedNow = Boolean(otpLockoutUntil && Date.now() < otpLockoutUntil);
     if (loading) return;
+    
+    // Check if cooldown is still active
     if (resendCooldownUntil && resendCooldownUntil > Date.now()) {
       const remaining = resendCooldownUntil - Date.now();
       const remainingSeconds = Math.ceil(remaining / 1000);
       const formattedTime = formatWaitTime(remainingSeconds);
-      setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+      setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
       return;
     }
+    
+    // Cooldown has expired or doesn't exist - send new code
     setCooldownMessage("");
     setFormError("");
 
@@ -396,10 +477,16 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     try {
       await sendRegisterOtp(registerEmail);
       setOtpAttemptsLeft(5);
+      
+      // Set cooldown immediately after sending
       const cooldownUntil = Date.now() + 60 * 1000;
       setResendCooldownUntil(cooldownUntil);
-      const formattedTime = formatWaitTime(60);
-      setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+      
+      // Show confirmation message for 4 seconds
+      setResendNotice("Novi verifikacioni kod je uspešno poslat.");
+      setTimeout(() => {
+        setResendNotice("");
+      }, 4000);
     } catch (e) {
       const msg = e?.message;
       if (e?.lockoutSeconds) {
@@ -411,11 +498,62 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         return;
       }
       if (msg && (msg === "Kod je vec poslat." || msg.includes("Kod je vec poslat"))) {
-        const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
-        const cooldownUntil = Date.now() + waitSeconds * 1000;
-        setResendCooldownUntil(cooldownUntil);
-        const formattedTime = formatWaitTime(waitSeconds);
-        setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+        // Prefer server-provided data if available
+        const serverData = e?._serverData || null;
+        if (serverData && serverData.code_sent_at) {
+          const cooldownUntil = applyCooldownFromResponse(serverData, registerEmail);
+          if (cooldownUntil) {
+            const remainingSeconds = Math.ceil((cooldownUntil - Date.now()) / 1000);
+            const formattedTime = formatWaitTime(Math.max(0, remainingSeconds));
+            setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Ako server nije poslao timestamps, primeni odmah klijentski fallback cooldown
+        // i pokušaj da osvežiš tačne timestamps u pozadini bez blokiranja UI.
+        {
+          const immediateCooldown = applyCooldownFromResponse(e, registerEmail);
+          if (immediateCooldown) {
+            setResendCooldownUntil(immediateCooldown);
+            const remainingSeconds = Math.ceil((immediateCooldown - Date.now()) / 1000);
+            const formattedTime = formatWaitTime(Math.max(0, remainingSeconds));
+            setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
+          } else {
+            const fallback = Date.now() + 30 * 1000;
+            setResendCooldownUntil(fallback);
+            setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ~30 s.`);
+          }
+
+          // Pokusaj da dohvatimo authoritative timestamps (ne-blokirajuće)
+          try {
+            const { data: pendingData } = await supabase.functions.invoke("pending-status", { body: { email: registerEmail } });
+            if (pendingData && pendingData.code_sent_at) {
+              const cooldownUntil = applyCooldownFromResponse(pendingData, registerEmail);
+              try {
+                const store = {
+                  code_sent_at: pendingData.code_sent_at,
+                  code_expires_at: pendingData.code_expires_at,
+                };
+                localStorage.setItem(`pending_registration:${registerEmail}`, JSON.stringify(store));
+              } catch (e) {}
+              if (cooldownUntil) {
+                setResendCooldownUntil(cooldownUntil);
+                const remainingSeconds = Math.ceil((cooldownUntil - Date.now()) / 1000);
+                const formattedTime = formatWaitTime(Math.max(0, remainingSeconds));
+                setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
+              }
+            }
+          } catch (err) {
+            console.error("PENDING_STATUS_FETCH_ERROR", err);
+            // Ne prikazuj dodatnu grešku korisniku; immediate fallback već postavljen
+          }
+
+          setLoading(false);
+          return;
+        }
+
         setLoading(false);
         return;
       }
@@ -426,11 +564,12 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
           const formattedTime = formatWaitTime(e.lockoutSeconds);
           setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
         } else if (msg.includes("Kod je vec poslat")) {
-          const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
-          const cooldownUntil = Date.now() + waitSeconds * 1000;
-          setResendCooldownUntil(cooldownUntil);
-          const formattedTime = formatWaitTime(waitSeconds);
-          setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+          const cooldownUntil = applyCooldownFromResponse(e, registerEmail);
+          if (cooldownUntil) {
+            const remainingSeconds = Math.ceil((cooldownUntil - Date.now()) / 1000);
+            const formattedTime = formatWaitTime(Math.max(0, remainingSeconds));
+            setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
+          }
         } else {
           setFormError(msg);
         }
@@ -488,13 +627,55 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
           if (error) throw error;
 
-          // Ako kod je vec poslat (waitSeconds), automatski prebaci na OTP korak bez slanja novog koda
-          if (!data?.ok && data?.waitSeconds !== undefined) {
-            // Backend vraća koliko sekundi je ostalo do mogućnosti ponovnog slanja
-            const cooldownUntil = Date.now() + data.waitSeconds * 1000;
-            setResendCooldownUntil(cooldownUntil);
+          // Ako kod je vec poslat (waitSeconds) ili backend vraća poruku da je kod poslat,
+          // automatski prebaci na OTP korak bez slanja novog koda. Koristi timestamp sa servera
+          if (
+            !data?.ok && (
+              data?.waitSeconds !== undefined ||
+              (data?.error && (data.error.includes("Kod je vec poslat") || data.error.includes("Kod je poslat")))
+            )
+          ) {
+            // Preferiraj server timestamp ako je dostavljen
+            if (data?.code_sent_at) {
+              const sentAt = new Date(data.code_sent_at).getTime();
+              const cooldownUntil = sentAt + (data?.resend_cooldown_seconds || 60) * 1000;
+              setResendCooldownUntil(cooldownUntil);
+              // persist to localStorage
+              try {
+                const store = {
+                  code_sent_at: data.code_sent_at,
+                  code_expires_at: data.code_expires_at,
+                };
+                localStorage.setItem(`pending_registration:${registerEmail}`, JSON.stringify(store));
+              } catch (e) {}
+            } else {
+              // fallback: try to read previously stored timestamp from localStorage
+              try {
+                const raw = localStorage.getItem(`pending_registration:${registerEmail}`);
+                if (raw) {
+                  const stored = JSON.parse(raw);
+                  if (stored?.code_sent_at) {
+                    const sentAt = new Date(stored.code_sent_at).getTime();
+                    const cooldownUntil = sentAt + (data?.waitSeconds || 60) * 1000;
+                    setResendCooldownUntil(cooldownUntil);
+                  } else {
+                    const wait = data?.waitSeconds !== undefined ? data.waitSeconds : 60;
+                    const cooldownUntil = Date.now() + wait * 1000;
+                    setResendCooldownUntil(cooldownUntil);
+                  }
+                } else {
+                  const wait = data?.waitSeconds !== undefined ? data.waitSeconds : 60;
+                  const cooldownUntil = Date.now() + wait * 1000;
+                  setResendCooldownUntil(cooldownUntil);
+                }
+              } catch (e) {
+                const wait = data?.waitSeconds !== undefined ? data.waitSeconds : 60;
+                const cooldownUntil = Date.now() + wait * 1000;
+                setResendCooldownUntil(cooldownUntil);
+              }
+            }
+
             setFormError(""); // Ne prikazuj grešku na email ekranu
-            // NE pozivaj sendRegisterOtp - kod je već poslat i još je pod limitom
             setRegisterStep("otp");
             setRegisterTouched({
               email: false,
@@ -540,9 +721,51 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
           }
 
           // Uspešno poslat kod - prebaci na OTP korak
-          await sendRegisterOtp(registerEmail);
-          const cooldownUntil = Date.now() + 60 * 1000;
-          setResendCooldownUntil(cooldownUntil);
+          // Koristi podatke iz prvog odgovora (prefer server timestamps)
+          setRegisterVerifyToken("");
+          setOtpLockoutUntil(null);
+          const expiresIn = data?.expiresIn !== undefined ? data.expiresIn : 300;
+          if (data?.code_expires_at) {
+            setOtpExpiresAt(new Date(data.code_expires_at).getTime());
+          } else {
+            setOtpExpiresAt(Date.now() + expiresIn * 1000);
+          }
+
+          if (data?.code_sent_at) {
+            const sentAt = new Date(data.code_sent_at).getTime();
+            const cooldownUntil = sentAt + (data?.resend_cooldown_seconds || 60) * 1000;
+            setResendCooldownUntil(cooldownUntil);
+            try {
+              const store = {
+                code_sent_at: data.code_sent_at,
+                code_expires_at: data.code_expires_at,
+              };
+              localStorage.setItem(`pending_registration:${registerEmail}`, JSON.stringify(store));
+            } catch (e) {}
+          } else {
+            try {
+              const raw = localStorage.getItem(`pending_registration:${registerEmail}`);
+              if (raw) {
+                const stored = JSON.parse(raw);
+                if (stored?.code_sent_at) {
+                  const sentAt = new Date(stored.code_sent_at).getTime();
+                  const cooldownUntil = sentAt + (data?.resend_cooldown_seconds || 60) * 1000;
+                  setResendCooldownUntil(cooldownUntil);
+                } else {
+                  const fallbackCooldown = Date.now() + (data?.resend_cooldown_seconds || 60) * 1000;
+                  setResendCooldownUntil(fallbackCooldown);
+                }
+              } else {
+                const fallbackCooldown = Date.now() + (data?.resend_cooldown_seconds || 60) * 1000;
+                setResendCooldownUntil(fallbackCooldown);
+              }
+            } catch (e) {
+              const fallbackCooldown = Date.now() + (data?.resend_cooldown_seconds || 60) * 1000;
+              setResendCooldownUntil(fallbackCooldown);
+            }
+          }
+
+          setOtpAttemptsLeft(5);
           setFormError(""); // Očisti grešku
           setRegisterStep("otp");
           setRegisterTouched({
@@ -558,23 +781,21 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
           const msg = e?.message || "";
           // Ako je kod vec poslat, prebaci na OTP korak bez slanja novog koda
           if (e?.waitSeconds !== undefined || msg.includes("Kod je vec poslat") || msg.includes("Kod je poslat")) {
-            // Koristi waitSeconds ako je dostupan, inače koristi default 60 sekundi
-            const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
-            const cooldownUntil = Date.now() + waitSeconds * 1000;
-            setResendCooldownUntil(cooldownUntil);
-            setFormError(""); // Ne prikazuj grešku na email ekranu
-            // NE pozivaj sendRegisterOtp - kod je već poslat i još je pod limitom
-            setRegisterStep("otp");
-            setRegisterTouched({
-              email: false,
-              name: false,
-              password: false,
-              passwordConfirm: false,
-              otp: false,
-            });
-            setLoading(false);
-            return;
-          }
+              // Compute cooldown from server or localStorage
+              applyCooldownFromResponse(e, registerEmail);
+              setFormError(""); // Ne prikazuj grešku na email ekranu
+              // NE pozivaj sendRegisterOtp - kod je već poslat i još je pod limitom
+              setRegisterStep("otp");
+              setRegisterTouched({
+                email: false,
+                name: false,
+                password: false,
+                passwordConfirm: false,
+                otp: false,
+              });
+              setLoading(false);
+              return;
+            }
           // Za ostale greške, prikaži ih
           setFormError(getAuthErrorMessage(e));
           setLoading(false);
@@ -622,6 +843,11 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         return;
       }
 
+      // Registration complete: clear any stored pending registration info
+      try {
+        localStorage.removeItem(`pending_registration:${registerEmail}`);
+      } catch (e) {}
+
       await loginWithPassword(registerEmail, registerPassword);
       const { data: userData } = await supabase.auth.getUser();
       if (userData?.user) {
@@ -646,7 +872,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         const cooldownUntil = Date.now() + waitSeconds * 1000;
         setResendCooldownUntil(cooldownUntil);
         const formattedTime = formatWaitTime(waitSeconds);
-        setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+        setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
         return;
       }
       if (msg && !msg.includes("Edge Function")) {
@@ -660,7 +886,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
           const cooldownUntil = Date.now() + waitSeconds * 1000;
           setResendCooldownUntil(cooldownUntil);
           const formattedTime = formatWaitTime(waitSeconds);
-          setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+          setCooldownMessage(`Kod je već poslat. Pokušajte ponovo za ${formattedTime}.`);
         } else {
           setFormError(msg);
         }
@@ -730,6 +956,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       loading,
       formError,
       cooldownMessage,
+      resendNotice,
     },
     setters: {
       setLoginValue,

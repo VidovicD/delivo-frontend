@@ -156,6 +156,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 formError={formError}
                 setFormError={setters.setFormError}
                 cooldownMessage={cooldownMessage}
+                resendNotice={state.resendNotice}
                 isValidEmail={isValidEmail}
                 nameRef={refs.nameRef}
                 emailRef={refs.emailRef}

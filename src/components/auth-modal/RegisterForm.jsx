@@ -17,6 +17,7 @@ function RegisterForm({
   formError,
   setFormError,
   cooldownMessage,
+  resendNotice,
   isValidEmail,
   nameRef,
   emailRef,
@@ -273,16 +274,16 @@ function RegisterForm({
             Potvrdi kod
           </button>
 
-          {cooldownMessage ? (
-            <div className="cooldown-message">{cooldownMessage}</div>
+          {resendNotice ? (
+            <div className="resend-notice">{resendNotice}</div>
           ) : (
             <button
               type="button"
-              className="auth-link auth-link--compact"
+              className={`auth-link auth-link--compact ${cooldownMessage ? 'auth-link--warning' : ''}`}
               onClick={onResendOtp}
-              disabled={loading || otpLocked}
+              disabled={loading || otpLocked || !!cooldownMessage}
             >
-              Kliknite ovde da posaljete novi kod
+              {cooldownMessage || "Kliknite ovde da pošaljete novi kod"}
             </button>
           )}
 
