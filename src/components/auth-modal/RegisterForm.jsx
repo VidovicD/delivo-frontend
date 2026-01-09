@@ -16,6 +16,7 @@ function RegisterForm({
   loading,
   formError,
   setFormError,
+  cooldownMessage,
   isValidEmail,
   nameRef,
   emailRef,
@@ -25,10 +26,6 @@ function RegisterForm({
   otpLocked,
   onResendOtp,
 }) {
- // const minutesLeft = otpExpiresAt
- //   ? Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 60000))
-  //  : 0;
-  // iznad je mrtav kod vrv jer se codex zaustavio zbog potrosenih kredita pa ne moze deploy da prodje
   const registerEmailError = registerTouched.email
     ? !registerEmail
       ? "Unesite email adresu."
@@ -43,11 +40,11 @@ function RegisterForm({
     "Pogrešan kod.",
     "Kod je istekao. Zatrazite novi kod.",
     "Previse pokusaja. Sacekajte 5 minuta pa pokusajte ponovo.",
-    "Kod je vec poslat. Sacekajte malo ili pokusajte ponovo.",
     "Email adresa nije validna.",
     "Doslo je do greske. Pokusajte ponovo.",
   ];
-  const registerOtpServerError = registerOtpServerErrors.includes(formError);
+  const isLockoutMessage = formError && formError.includes("Previse pokusaja") && formError.includes("Sacekajte");
+  const registerOtpServerError = (registerOtpServerErrors.includes(formError) || isLockoutMessage);
   const registerEmailServerError =
     formError ===
     "Nalog sa tim emailom vec postoji. Molimo vas, ulogujte se.";
@@ -80,16 +77,22 @@ function RegisterForm({
     "Lozinke se ne poklapaju.",
     "Popunite sva polja.",
   ];
- // const registerFieldErrors = [
-  //  registerEmailError,
-  //  registerOtpError,
-  //  registerNameError,
-  //  registerPasswordError,
-  //  registerPasswordConfirmError,
- // ].filter(Boolean);
-    // iznad je mrtav kod vrv jer se codex zaustavio zbog potrosenih kredita pa ne moze deploy da prodje
+  
+  // Ne prikazuj greške koje se odnose na kod kada je korisnik na email ekranu
+  const isCodeRelatedError = formError && (
+    formError.includes("Kod je vec poslat") ||
+    formError.includes("Kod je poslat") ||
+    formError.includes("Kod je istekao") ||
+    formError.includes("Previse pokusaja") ||
+    formError.includes("Previše pokušaja") ||
+    formError.includes("Sacekajte") ||
+    formError.includes("Sačekajte")
+  );
+  
   const showFormError =
-    formError && !registerValidationMessages.includes(formError);
+    formError && 
+    !registerValidationMessages.includes(formError) &&
+    !(registerStep === "email" && isCodeRelatedError);
 
   return (
     <div className="auth-form">
@@ -270,14 +273,18 @@ function RegisterForm({
             Potvrdi kod
           </button>
 
-          <button
-            type="button"
-            className="auth-link auth-link--compact"
-            onClick={onResendOtp}
-            disabled={loading || otpLocked}
-          >
-            Kliknite ovde da posaljete novi kod
-          </button>
+          {cooldownMessage ? (
+            <div className="cooldown-message">{cooldownMessage}</div>
+          ) : (
+            <button
+              type="button"
+              className="auth-link auth-link--compact"
+              onClick={onResendOtp}
+              disabled={loading || otpLocked}
+            >
+              Kliknite ovde da posaljete novi kod
+            </button>
+          )}
 
         </>
       )}

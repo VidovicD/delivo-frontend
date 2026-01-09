@@ -37,6 +37,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
 
     loading,
     formError,
+    cooldownMessage,
   } = state;
 
   return (
@@ -154,6 +155,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 loading={loading}
                 formError={formError}
                 setFormError={setters.setFormError}
+                cooldownMessage={cooldownMessage}
                 isValidEmail={isValidEmail}
                 nameRef={refs.nameRef}
                 emailRef={refs.emailRef}

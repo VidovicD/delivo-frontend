@@ -25,11 +25,13 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [registerOtp, setRegisterOtp] = useState("");
   const [registerVerifyToken, setRegisterVerifyToken] = useState("");
   const [otpLockoutUntil, setOtpLockoutUntil] = useState(null);
+  const [resendCooldownUntil, setResendCooldownUntil] = useState(null);
   const [otpExpiresAt, setOtpExpiresAt] = useState(null);
   const [otpAttemptsLeft, setOtpAttemptsLeft] = useState(5);
 
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [cooldownMessage, setCooldownMessage] = useState("");
 
   const [loginTouched, setLoginTouched] = useState(false);
   const [registerTouched, setRegisterTouched] = useState({
@@ -56,8 +58,11 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setRegisterOtp("");
     setRegisterVerifyToken("");
     setOtpLockoutUntil(null);
+    setResendCooldownUntil(null);
     setOtpExpiresAt(null);
     setOtpAttemptsLeft(5);
+    setFormError(""); // Očisti grešku kada se resetuje stanje
+    setCooldownMessage(""); // Očisti cooldown poruku
     setRegisterTouched({
       email: false,
       name: false,
@@ -86,29 +91,74 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   };
 
   useEffect(() => {
-    if (!otpLockoutUntil) return;
-    const remaining = otpLockoutUntil - Date.now();
-    if (remaining <= 0) {
-      setOtpLockoutUntil(null);
-      if (
-        formError ===
-        "Previse pokusaja. Sacekajte 5 minuta pa pokusajte ponovo."
-      ) {
-        setFormError("");
-      }
+    if (!otpLockoutUntil) {
+      setFormError((prev) => {
+        if (prev && prev.includes("Previse pokusaja")) {
+          return "";
+        }
+        return prev;
+      });
       return;
     }
-    const timer = setTimeout(() => {
-      setOtpLockoutUntil(null);
-      if (
-        formError ===
-        "Previse pokusaja. Sacekajte 5 minuta pa pokusajte ponovo."
-      ) {
-        setFormError("");
+
+    const updateLockoutMessage = () => {
+      const remaining = otpLockoutUntil - Date.now();
+      if (remaining <= 0) {
+        setOtpLockoutUntil(null);
+        setFormError((prev) => {
+          if (prev && prev.includes("Previse pokusaja")) {
+            return "";
+          }
+          return prev;
+        });
+        return;
       }
-    }, remaining);
-    return () => clearTimeout(timer);
-  }, [otpLockoutUntil, formError]);
+
+      const remainingSeconds = Math.ceil(remaining / 1000);
+      const formattedTime = formatWaitTime(remainingSeconds);
+      
+      setFormError((prev) => {
+        if (prev && prev.includes("Previse pokusaja")) {
+          return `Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`;
+        }
+        return prev;
+      });
+    };
+
+    updateLockoutMessage();
+
+    const interval = setInterval(updateLockoutMessage, 1000);
+
+    return () => clearInterval(interval);
+  }, [otpLockoutUntil]);
+
+  useEffect(() => {
+    if (!resendCooldownUntil) {
+      setCooldownMessage("");
+      return;
+    }
+
+    const updateCooldownMessage = () => {
+      const remaining = resendCooldownUntil - Date.now();
+      if (remaining <= 0) {
+        setResendCooldownUntil(null);
+        setCooldownMessage("");
+        return;
+      }
+
+      const remainingSeconds = Math.ceil(remaining / 1000);
+      const formattedTime = formatWaitTime(remainingSeconds);
+      
+      setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+    };
+
+    // Odmah postavi poruku
+    updateCooldownMessage();
+
+    const interval = setInterval(updateCooldownMessage, 1000);
+
+    return () => clearInterval(interval);
+  }, [resendCooldownUntil]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -117,6 +167,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Uklonjen checkLockoutStatus - provera se radi pri slanju koda, ne ovde
 
   const handleGoogleLogin = async () => {
     if (loading) return;
@@ -208,6 +260,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     }
   };
 
+  // Uklonjena checkLockoutStatus funkcija - nije potrebna
+
   const sendRegisterOtp = async (email) => {
     const { data, error } = await supabase.functions.invoke(
       "register-send-code",
@@ -216,11 +270,12 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
     if (error) throw error;
     if (!data?.ok) {
-      const err = new Error(data?.error || "Doslo je do greske.");
+      const errorMsg = data?.error || "Doslo je do greske.";
+      const err = new Error(errorMsg);
       if (data?.lockoutSeconds) {
         err.lockoutSeconds = data.lockoutSeconds;
       }
-      if (data?.waitSeconds) {
+      if (data?.waitSeconds !== undefined) {
         err.waitSeconds = data.waitSeconds;
       }
       throw err;
@@ -228,6 +283,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
     setRegisterVerifyToken("");
     setOtpLockoutUntil(null);
+    setResendCooldownUntil(null);
     setOtpExpiresAt(Date.now() + (data.expiresIn || 600) * 1000);
     setOtpAttemptsLeft(5);
   };
@@ -260,14 +316,28 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
           setOtpAttemptsLeft(data.attemptsLeft);
         }
         if (data?.lockoutSeconds) {
-          setOtpLockoutUntil(Date.now() + data.lockoutSeconds * 1000);
+          const lockoutUntil = Date.now() + data.lockoutSeconds * 1000;
+          setOtpLockoutUntil(lockoutUntil);
+          const formattedTime = formatWaitTime(data.lockoutSeconds);
+          setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
+          return;
         }
-        setFormError(data?.error || "Pogresan kod.");
+        if (data?.waitSeconds) {
+          const cooldownUntil = Date.now() + data.waitSeconds * 1000;
+          setResendCooldownUntil(cooldownUntil);
+          return;
+        }
+        if (data?.error && !data.error.includes("Kod je vec poslat")) {
+          setFormError(data.error);
+        } else {
+          setFormError("Pogresan kod.");
+        }
         return;
       }
 
       setRegisterVerifyToken(data.verifyToken || "");
       setOtpLockoutUntil(null);
+      setCooldownMessage("");
       setRegisterStep("details");
       setRegisterTouched({
         email: false,
@@ -281,10 +351,22 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       console.error("VERIFY OTP ERROR:", e);
       const msg = e?.message;
       if (e?.lockoutSeconds) {
-        setOtpLockoutUntil(Date.now() + e.lockoutSeconds * 1000);
-      }
-      if (msg && !msg.includes("Edge Function")) {
-        setFormError(msg);
+        const lockoutUntil = Date.now() + e.lockoutSeconds * 1000;
+        setOtpLockoutUntil(lockoutUntil);
+        const formattedTime = formatWaitTime(e.lockoutSeconds);
+        setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
+      } else if (msg && (msg?.includes("Kod je vec poslat") || msg === "Kod je vec poslat.")) {
+        const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
+        const cooldownUntil = Date.now() + waitSeconds * 1000;
+        setResendCooldownUntil(cooldownUntil);
+      } else if (msg && !msg.includes("Edge Function")) {
+        if (msg.includes("Kod je vec poslat")) {
+          const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
+          const cooldownUntil = Date.now() + waitSeconds * 1000;
+          setResendCooldownUntil(cooldownUntil);
+        } else {
+          setFormError(msg);
+        }
       } else {
         setFormError(getAuthErrorMessage(e));
       }
@@ -295,6 +377,14 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleRegisterResendOtp = async () => {
     if (loading) return;
+    if (resendCooldownUntil && resendCooldownUntil > Date.now()) {
+      const remaining = resendCooldownUntil - Date.now();
+      const remainingSeconds = Math.ceil(remaining / 1000);
+      const formattedTime = formatWaitTime(remainingSeconds);
+      setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+      return;
+    }
+    setCooldownMessage("");
     setFormError("");
 
     if (!isValidEmail(registerEmail)) {
@@ -306,21 +396,44 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     try {
       await sendRegisterOtp(registerEmail);
       setOtpAttemptsLeft(5);
+      const cooldownUntil = Date.now() + 60 * 1000;
+      setResendCooldownUntil(cooldownUntil);
+      const formattedTime = formatWaitTime(60);
+      setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
     } catch (e) {
       const msg = e?.message;
       if (e?.lockoutSeconds) {
-        setOtpLockoutUntil(Date.now() + e.lockoutSeconds * 1000);
+        const lockoutUntil = Date.now() + e.lockoutSeconds * 1000;
+        setOtpLockoutUntil(lockoutUntil);
+        const formattedTime = formatWaitTime(e.lockoutSeconds);
+        setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
+        setLoading(false);
+        return;
       }
-      if (e?.waitSeconds && msg === "Kod je vec poslat.") {
-        setFormError(
-          `Kod je vec poslat. Mozete ponovo za ${formatWaitTime(
-            e.waitSeconds
-          )}.`
-        );
+      if (msg && (msg === "Kod je vec poslat." || msg.includes("Kod je vec poslat"))) {
+        const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
+        const cooldownUntil = Date.now() + waitSeconds * 1000;
+        setResendCooldownUntil(cooldownUntil);
+        const formattedTime = formatWaitTime(waitSeconds);
+        setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+        setLoading(false);
         return;
       }
       if (msg && !msg.includes("Edge Function")) {
-        setFormError(msg);
+        if (msg.includes("Previse pokusaja") && e?.lockoutSeconds) {
+          const lockoutUntil = Date.now() + e.lockoutSeconds * 1000;
+          setOtpLockoutUntil(lockoutUntil);
+          const formattedTime = formatWaitTime(e.lockoutSeconds);
+          setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
+        } else if (msg.includes("Kod je vec poslat")) {
+          const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
+          const cooldownUntil = Date.now() + waitSeconds * 1000;
+          setResendCooldownUntil(cooldownUntil);
+          const formattedTime = formatWaitTime(waitSeconds);
+          setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+        } else {
+          setFormError(msg);
+        }
       } else {
         setFormError(getAuthErrorMessage(e));
       }
@@ -357,21 +470,31 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       if (registerStep === "email") {
         if (!registerEmail) {
           setFormError("Unesite email adresu.");
+          setLoading(false);
           return;
         }
 
         if (!isValidEmail(registerEmail)) {
           setFormError("Email adresa nije validna.");
+          setLoading(false);
           return;
         }
 
         try {
-          await sendRegisterOtp(registerEmail);
-        } catch (e) {
-          if (
-            e?.waitSeconds &&
-            e?.message === "Kod je vec poslat."
-          ) {
+          const { data, error } = await supabase.functions.invoke(
+            "register-send-code",
+            { body: { email: registerEmail } }
+          );
+
+          if (error) throw error;
+
+          // Ako kod je vec poslat (waitSeconds), automatski prebaci na OTP korak bez slanja novog koda
+          if (!data?.ok && data?.waitSeconds !== undefined) {
+            // Backend vraća koliko sekundi je ostalo do mogućnosti ponovnog slanja
+            const cooldownUntil = Date.now() + data.waitSeconds * 1000;
+            setResendCooldownUntil(cooldownUntil);
+            setFormError(""); // Ne prikazuj grešku na email ekranu
+            // NE pozivaj sendRegisterOtp - kod je već poslat i još je pod limitom
             setRegisterStep("otp");
             setRegisterTouched({
               email: false,
@@ -380,20 +503,83 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
               passwordConfirm: false,
               otp: false,
             });
-            setFormError("");
+            setLoading(false);
             return;
           }
-          throw e;
+
+          // Ako je lockout, prebaci na OTP korak ali ne prikazuj grešku na email ekranu - prikazaće se na OTP ekranu
+          if (!data?.ok && data?.lockoutSeconds) {
+            const lockoutUntil = Date.now() + data.lockoutSeconds * 1000;
+            setOtpLockoutUntil(lockoutUntil);
+            setFormError(""); // Ne prikazuj grešku na email ekranu
+            // NE pozivaj sendRegisterOtp - korisnik je u lockout-u
+            setRegisterStep("otp");
+            setRegisterTouched({
+              email: false,
+              name: false,
+              password: false,
+              passwordConfirm: false,
+              otp: false,
+            });
+            setLoading(false);
+            return;
+          }
+
+          // Ako je email već registrovan, prikaži grešku
+          if (!data?.ok && data?.error?.includes("vec postoji")) {
+            setFormError(data.error || "Nalog sa tim emailom vec postoji. Molimo vas, ulogujte se.");
+            setLoading(false);
+            return;
+          }
+
+          // Ako je neka druga greška, prikaži je
+          if (!data?.ok) {
+            setFormError(data?.error || "Doslo je do greske. Pokusajte ponovo.");
+            setLoading(false);
+            return;
+          }
+
+          // Uspešno poslat kod - prebaci na OTP korak
+          await sendRegisterOtp(registerEmail);
+          const cooldownUntil = Date.now() + 60 * 1000;
+          setResendCooldownUntil(cooldownUntil);
+          setFormError(""); // Očisti grešku
+          setRegisterStep("otp");
+          setRegisterTouched({
+            email: false,
+            name: false,
+            password: false,
+            passwordConfirm: false,
+            otp: false,
+          });
+          setLoading(false);
+          return;
+        } catch (e) {
+          const msg = e?.message || "";
+          // Ako je kod vec poslat, prebaci na OTP korak bez slanja novog koda
+          if (e?.waitSeconds !== undefined || msg.includes("Kod je vec poslat") || msg.includes("Kod je poslat")) {
+            // Koristi waitSeconds ako je dostupan, inače koristi default 60 sekundi
+            const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
+            const cooldownUntil = Date.now() + waitSeconds * 1000;
+            setResendCooldownUntil(cooldownUntil);
+            setFormError(""); // Ne prikazuj grešku na email ekranu
+            // NE pozivaj sendRegisterOtp - kod je već poslat i još je pod limitom
+            setRegisterStep("otp");
+            setRegisterTouched({
+              email: false,
+              name: false,
+              password: false,
+              passwordConfirm: false,
+              otp: false,
+            });
+            setLoading(false);
+            return;
+          }
+          // Za ostale greške, prikaži ih
+          setFormError(getAuthErrorMessage(e));
+          setLoading(false);
+          return;
         }
-        setRegisterStep("otp");
-        setRegisterTouched({
-          email: false,
-          name: false,
-          password: false,
-          passwordConfirm: false,
-          otp: false,
-        });
-        return;
       }
 
       if (
@@ -449,18 +635,35 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       console.error("REGISTER SUBMIT ERROR:", e);
       const msg = e?.message;
       if (e?.lockoutSeconds) {
-        setOtpLockoutUntil(Date.now() + e.lockoutSeconds * 1000);
+        const lockoutUntil = Date.now() + e.lockoutSeconds * 1000;
+        setOtpLockoutUntil(lockoutUntil);
+        const formattedTime = formatWaitTime(e.lockoutSeconds);
+        setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
+        return;
       }
-      if (e?.waitSeconds && msg === "Kod je vec poslat.") {
-        setFormError(
-          `Kod je vec poslat. Mozete ponovo za ${formatWaitTime(
-            e.waitSeconds
-          )}.`
-        );
+      if (msg && (msg === "Kod je vec poslat." || msg.includes("Kod je vec poslat"))) {
+        const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
+        const cooldownUntil = Date.now() + waitSeconds * 1000;
+        setResendCooldownUntil(cooldownUntil);
+        const formattedTime = formatWaitTime(waitSeconds);
+        setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
         return;
       }
       if (msg && !msg.includes("Edge Function")) {
-        setFormError(msg);
+        if (msg.includes("Previse pokusaja") && e?.lockoutSeconds) {
+          const lockoutUntil = Date.now() + e.lockoutSeconds * 1000;
+          setOtpLockoutUntil(lockoutUntil);
+          const formattedTime = formatWaitTime(e.lockoutSeconds);
+          setFormError(`Previse pokusaja. Sacekajte još ${formattedTime} pa pokusajte ponovo.`);
+        } else if (msg.includes("Kod je vec poslat")) {
+          const waitSeconds = e?.waitSeconds !== undefined ? e.waitSeconds : 60;
+          const cooldownUntil = Date.now() + waitSeconds * 1000;
+          setResendCooldownUntil(cooldownUntil);
+          const formattedTime = formatWaitTime(waitSeconds);
+          setCooldownMessage(`Kod je poslat. Možete ponovo za ${formattedTime}.`);
+        } else {
+          setFormError(msg);
+        }
         return;
       }
       const lowerMsg = (e?.message || "").toLowerCase();
@@ -526,6 +729,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       otpLocked: Boolean(otpLockoutUntil && Date.now() < otpLockoutUntil),
       loading,
       formError,
+      cooldownMessage,
     },
     setters: {
       setLoginValue,
