@@ -37,13 +37,6 @@ function RegisterForm({
     }, 1000);
     return () => clearInterval(interval);
   }, [otpLocked, otpLockoutUntil]);
-  const registerEmailError = registerTouched.email
-    ? !registerEmail
-      ? "Unesite email adresu."
-      : !isValidEmail(registerEmail)
-        ? "Email adresa nije u ispravnom formatu."
-        : ""
-    : "";
   const registerOtpFieldErrors = [
     "Pogrešan kod.",
     "Kod je istekao. Zatražite novi kod.",
@@ -96,8 +89,6 @@ function RegisterForm({
     return `${seconds} s`;
   };
   
-  const showRegisterEmailRequired =
-    !registerEmailServerError && emailError;
   const registerNameError =
     registerTouched.name && !registerName ? "Ime je obavezno." : "";
   const registerPasswordError = registerTouched.password
