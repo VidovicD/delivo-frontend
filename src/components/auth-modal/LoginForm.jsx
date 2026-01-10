@@ -17,22 +17,41 @@ function LoginForm({
   onSubmit,
   onBack,
 }) {
-  const loginEmailError =
-    loginTouched && (!loginValue || !isValidEmail(loginValue))
-      ? "Unesite ispravnu email adresu."
-      : "";
   const loginEmailServerError =
-    formError === "Nalog ne postoji. Registrujte se.";
-  const loginPasswordServerError = formError === "Pogresna lozinka.";
+    formError === "Nalog sa ovom email adresom ne postoji." ||
+    formError === "Unesite ispravnu email adresu." || // backend šalje staru poruku
+    formError === "Nalog ne postoji. Registrujte se."; // backend šalje staru poruku
+  
+  const emailError = loginEmailServerError
+    ? formError === "Unesite ispravnu email adresu." 
+      ? !loginValue 
+        ? "Unesite email adresu." // prazan email
+        : "Email adresa nije u ispravnom formatu." // loš format
+      : formError === "Nalog ne postoji. Registrujte se."
+        ? "Nalog sa ovom email adresom ne postoji." // mapiramo staru na novu poruku
+        : formError
+    : loginTouched
+      ? !loginValue
+        ? "Unesite email adresu."
+        : loginValue && !isValidEmail(loginValue)
+          ? "Email adresa nije u ispravnom formatu."
+          : ""
+      : "";
+  
+  const hasEmailError = !!emailError;
+  const loginPasswordServerError = formError === "Pogrešna lozinka.";
   const showLoginPasswordRequired =
     !loginPasswordServerError && loginTouched && !loginPassword;
-  const loginPasswordError = showLoginPasswordRequired
-    ? "Lozinka je obavezna."
-    : "";
+  const loginPasswordError = loginPasswordServerError
+    ? "Pogrešna lozinka."
+    : showLoginPasswordRequired
+      ? "Unesite lozinku."
+      : "";
   const loginValidationMessages = [
-    "Unesite ispravnu email adresu.",
-    "Lozinka je obavezna.",
-    "Pogresna lozinka.",
+    "Unesite email adresu.",
+    "Email adresa nije u ispravnom formatu.",
+    "Unesite lozinku.",
+    "Pogrešna lozinka.",
   ];
   const showFormError =
     formError && !loginValidationMessages.includes(formError);
@@ -49,20 +68,17 @@ function LoginForm({
               onChange={(e) => {
                 setLoginValue(e.target.value);
                 if (formError) setFormError("");
+                // Resetuj touched da se client validacija obriše
+                if (loginTouched) setLoginTouched(false);
               }}
               className={
-                (loginTouched &&
-                  (!loginValue || !isValidEmail(loginValue))) ||
-                loginEmailServerError
+                hasEmailError
                   ? "error"
                   : ""
               }
             />
-            {loginEmailError && (
-              <div className="field-error">{loginEmailError}</div>
-            )}
-            {showFormError && (
-              <div className="field-error">{formError}</div>
+            {emailError && (
+              <div className="field-error">{emailError}</div>
             )}
           </div>
 
@@ -91,6 +107,9 @@ function LoginForm({
               value={loginPassword}
               onChange={(e) => {
                 setLoginPassword(e.target.value);
+                if (formError) setFormError("");
+                // Resetuj touched da se client validacija obriše
+                if (loginTouched) setLoginTouched(false);
               }}
               className={
                 showLoginPasswordRequired ||
@@ -101,9 +120,6 @@ function LoginForm({
             />
             {loginPasswordError && (
               <div className="field-error">{loginPasswordError}</div>
-            )}
-            {loginPasswordServerError && (
-              <div className="field-error">{formError}</div>
             )}
             {showFormError && (
               <div className="field-error">{formError}</div>

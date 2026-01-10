@@ -25,39 +25,86 @@ function RegisterForm({
   otpExpiresAt,
   otpAttemptsLeft,
   otpLocked,
+  otpLockoutUntil,
   onResendOtp,
 }) {
+  const [, setUpdateTrigger] = React.useState(0);
+  
+  React.useEffect(() => {
+    if (!otpLocked || !otpLockoutUntil) return;
+    const interval = setInterval(() => {
+      setUpdateTrigger(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [otpLocked, otpLockoutUntil]);
   const registerEmailError = registerTouched.email
     ? !registerEmail
       ? "Unesite email adresu."
       : !isValidEmail(registerEmail)
-        ? "Email adresa nije validna."
+        ? "Email adresa nije u ispravnom formatu."
         : ""
     : "";
-  const registerOtpError =
-    registerTouched.otp && !registerOtp ? "Unesite kod." : "";
-  const registerOtpServerErrors = [
-    "Pogresan kod.",
+  const registerOtpFieldErrors = [
     "Pogrešan kod.",
-    "Kod je istekao. Zatrazite novi kod.",
-    "Previse pokusaja. Sacekajte 5 minuta pa pokusajte ponovo.",
-    "Email adresa nije validna.",
-    "Doslo je do greske. Pokusajte ponovo.",
+    "Kod je istekao. Zatražite novi kod.",
   ];
-  const isLockoutMessage = formError && formError.includes("Previse pokusaja") && formError.includes("Sacekajte");
-  const registerOtpServerError = (registerOtpServerErrors.includes(formError) || isLockoutMessage);
+  const registerOtpFormErrors = [
+    "Email adresa nije u ispravnom formatu.",
+    "Došlo je do greške. Molimo vas da pokušate ponovo.",
+  ];
+  const isLockoutMessage = formError && formError.includes("Previše pokušaja") && formError.includes("Sačekajte");
+  // Lockout je FORM ERROR, ne field error - zato !isLockoutMessage
+  const registerOtpServerError = registerOtpFieldErrors.includes(formError) && !isLockoutMessage;
+  
+  // OTP field error sa prioritetom (server > client)
+  const otpFieldError = registerOtpServerError
+    ? formError
+    : registerTouched.otp && !registerOtp
+      ? "Unesite verifikacioni kod."
+      : "";
   const registerEmailServerError =
-    formError ===
-    "Nalog sa tim emailom vec postoji. Molimo vas, ulogujte se.";
+    formError === "Nalog sa tim emailom vec postoji. Molimo vas, ulogujte se." ||
+    formError === "Email adresa nije validna."; // backend šalje ove poruke
+  
+  const emailError = registerEmailServerError
+    ? formError === "Email adresa nije validna."
+      ? !registerEmail
+        ? "Unesite email adresu."
+        : "Email adresa nije u ispravnom formatu."
+      : "Nalog sa ovom email adresom već postoji."
+    : registerTouched.email
+      ? !registerEmail
+        ? "Unesite email adresu."
+        : !isValidEmail(registerEmail)
+          ? "Email adresa nije u ispravnom formatu."
+          : ""
+      : "";
+  
+  const hasEmailError = !!emailError;
+  
+  // Funkcija za formatiranje vremena čekanja
+  const formatLockoutTime = () => {
+    if (!otpLockoutUntil) return "";
+    const remaining = otpLockoutUntil - Date.now();
+    if (remaining <= 0) return "";
+    const totalSeconds = Math.ceil(remaining / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes > 0) {
+      return `${minutes} min ${seconds} s`;
+    }
+    return `${seconds} s`;
+  };
+  
   const showRegisterEmailRequired =
-    !registerEmailServerError && registerEmailError;
+    !registerEmailServerError && emailError;
   const registerNameError =
     registerTouched.name && !registerName ? "Ime je obavezno." : "";
   const registerPasswordError = registerTouched.password
     ? !registerPassword
       ? "Lozinka je obavezna."
       : registerPassword.length < 6
-        ? "Lozinka mora imati najmanje 6 karaktera."
+        ? "Lozinka mora sadržati najmanje 6 karaktera."
         : ""
     : "";
   const registerPasswordConfirmError = registerTouched.passwordConfirm
@@ -70,10 +117,13 @@ function RegisterForm({
   const registerValidationMessages = [
     "Unesite email adresu.",
     "Email adresa nije validna.",
-    "Unesite kod.",
+    "Unesite verifikacioni kod.",
+    "Pogrešan kod.",
+    "Kod je istekao. Zatražite novi kod.",
+    "Previše neuspešnih pokušaja. Pokušajte ponovo za 5 minuta.",
     "Ime je obavezno.",
     "Lozinka je obavezna.",
-    "Lozinka mora imati najmanje 6 karaktera.",
+    "Lozinka mora sadržati najmanje 6 karaktera.",
     "Potvrda lozinke je obavezna.",
     "Lozinke se ne poklapaju.",
     "Popunite sva polja.",
@@ -81,19 +131,19 @@ function RegisterForm({
   
   // Ne prikazuj greške koje se odnose na kod kada je korisnik na email ekranu
   const isCodeRelatedError = formError && (
-    formError.includes("Kod je vec poslat") ||
-    formError.includes("Kod je poslat") ||
-    formError.includes("Kod je istekao") ||
-    formError.includes("Previse pokusaja") ||
-    formError.includes("Previše pokušaja") ||
-    formError.includes("Sacekajte") ||
-    formError.includes("Sačekajte")
+    formError.includes("Verifikacioni kod je već poslat") ||
+    formError.includes("Verifikacioni kod je uspešno poslat") ||
+    formError.includes("Verifikacioni kod je istekao") ||
+    formError.includes("Previše neuspešnih pokušaja") ||
+    formError.includes("Pokušajte ponovo za")
   );
   
   const showFormError =
     formError && 
     !registerValidationMessages.includes(formError) &&
-    !(registerStep === "email" && isCodeRelatedError);
+    !(registerStep === "email" && isCodeRelatedError) &&
+    !registerOtpFieldErrors.includes(formError) &&
+    !registerOtpFormErrors.includes(formError);
 
   return (
     <div className="auth-form">
@@ -107,20 +157,18 @@ function RegisterForm({
               value={registerEmail}
               onChange={(e) => {
                 setRegisterEmail(e.target.value);
+                if (formError) setFormError("");
+                // Resetuj touched da se client validacija obriše
+                if (registerTouched.email) setRegisterTouched((t) => ({ ...t, email: false }));
               }}
               className={
-                (registerTouched.email &&
-                  (!registerEmail || !isValidEmail(registerEmail))) ||
-                registerEmailServerError
+                hasEmailError
                   ? "error"
                   : ""
               }
             />
-            {showRegisterEmailRequired && (
-              <div className="field-error">{registerEmailError}</div>
-            )}
-            {showFormError && (
-              <div className="field-error">{formError}</div>
+            {emailError && (
+              <div className="field-error">{emailError}</div>
             )}
           </div>
 
@@ -239,26 +287,57 @@ function RegisterForm({
 
           <div className="form-field">
             <label>Verifikacioni kod</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={registerOtp}
-              onChange={(e) => {
-                setRegisterOtp(e.target.value);
-                if (formError && !otpLocked) setFormError("");
-              }}
-              className={
-                (registerTouched.otp && !registerOtp) ||
-                registerOtpServerError
-                  ? "error"
-                  : ""
-              }
-            />
-            {registerOtpError && !registerOtpServerError && (
-              <div className="field-error">{registerOtpError}</div>
+            <div className="otp-inputs">
+              {[0,1,2,3,4,5].map((index) => (
+                <div key={`otp-group-${index}`}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength="1"
+                    autoFocus={index === 0}
+                    autoComplete="off"
+                    value={registerOtp[index] || ""}
+                    onChange={(e) => {
+                      const newOtp = registerOtp.split("");
+                      newOtp[index] = e.target.value.replace(/\D/g, "");
+                      setRegisterOtp(newOtp.join(""));
+                      if (newOtp[index] && index < 5) document.getElementById(`otp-${index+1}`).focus();
+                      if (formError && !otpLocked) setFormError("");
+                      // Resetuj touched da se client validacija obriše
+                      if (registerTouched.otp) setRegisterTouched((t) => ({ ...t, otp: false }));
+                      if (newOtp.join("").length === 6) onSubmit();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Backspace" && !registerOtp[index] && index > 0) {
+                        document.getElementById(`otp-${index-1}`).focus();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const paste = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                      setRegisterOtp(paste);
+                      if (paste.length === 6) onSubmit();
+                    }}
+                    id={`otp-${index}`}
+                    className=""
+                    aria-label={`Kod polje ${index + 1} od 6`}
+                  />
+                  {index < 5 && <span className="otp-separator">-</span>}
+                </div>
+              ))}
+            </div>
+            {otpFieldError && (
+              <div className="field-error">{otpFieldError}</div>
             )}
             {showFormError && (
               <div className="field-error">{formError}</div>
+            )}
+            {otpLocked && (
+              <div className="field-error">
+                {formError && formError.includes("Previše pokušaja") 
+                  ? formError 
+                  : `Previše neuspešnih pokušaja. Pokušajte ponovo za ${formatLockoutTime()}.`}
+              </div>
             )}
           </div>
 

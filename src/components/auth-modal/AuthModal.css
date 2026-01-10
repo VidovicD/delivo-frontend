@@ -205,9 +205,9 @@
   border-radius: 999px;
   border: none;
 
-  background: var(--brand-accent);
+  background: var(--brand-primary);
   border: 1px solid #00000020;
-  color: var(--brand-neutral);
+  color: var(--brand-accent);
 
   font-weight: 600;
   cursor: pointer;
@@ -215,7 +215,7 @@
 }
 
 .auth-submit:hover:not(:disabled) {
-  background: var(--brand-accent-hover);
+  background: var(--brand-primary-hover);
 }
 
 
@@ -245,6 +245,33 @@
 .auth-submit:focus-visible {
   outline: none;
   box-shadow: none;
+}
+
+.otp-inputs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+}
+
+.otp-inputs input {
+  text-align: center;
+  height: 56px;
+  width: 48px;
+  flex: 1;
+  max-width: 48px;
+}
+
+.otp-separator {
+  color: var(--brand-accent);
+  font-size: 20px;
+  font-weight: 300;
+  margin: 0 8px;
+}
+
+.otp-inputs input.error {
+  border: 2px solid #ff4444;
+  background-color: rgba(255, 68, 68, 0.1);
 }
 
 .auth-divider {
@@ -408,7 +435,7 @@
   color: var(--brand-warning);
   opacity: 0.85;
   margin: 4px 0 0;
-  text-align: left;
+  text-align: center;
 }
 
 .cooldown-message {

@@ -145,6 +145,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 otpExpiresAt={otpExpiresAt}
                 otpAttemptsLeft={otpAttemptsLeft}
                 otpLocked={state.otpLocked}
+                otpLockoutUntil={state.otpLockoutUntil}
                 registerTouched={registerTouched}
                 setRegisterTouched={setters.setRegisterTouched}
                 setRegisterName={setters.setRegisterName}

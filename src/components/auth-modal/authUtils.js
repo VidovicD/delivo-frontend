@@ -7,10 +7,10 @@ export const getAuthErrorMessage = (err) => {
   const msg = (err.message || "").toLowerCase();
 
   if (err.status === 429 || msg.includes("too many"))
-    return "Previse pokusaja. Sacekajte minut i pokusajte ponovo.";
+    return "Previše pokušaja. Sačekajte minut i pokušajte ponovo.";
 
   if (msg.includes("invalid login credentials"))
-    return "Pogresna lozinka.";
+    return "Pogrešna lozinka.";
 
   if (msg.includes("already") && msg.includes("registered"))
     return "Nalog sa ovom email adresom vec postoji.";
