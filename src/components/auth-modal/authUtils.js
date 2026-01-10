@@ -1,6 +1,13 @@
 export const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+export const isValidPassword = (password) => {
+  if (password.length < 8) return false;
+  if (!/[a-zA-Z]/.test(password)) return false; // bar jedno slovo
+  if (!/[0-9]/.test(password)) return false; // bar jedan broj
+  return true;
+};
+
 export const getAuthErrorMessage = (err) => {
   if (!err) return "";
 

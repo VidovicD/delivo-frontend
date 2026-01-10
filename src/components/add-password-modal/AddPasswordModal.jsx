@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./AddPasswordModal.css";
 import { supabase } from "../../supabaseClient";
+import { isValidPassword } from "../auth-modal/authUtils";
 import { EyeOpen, EyeClosed } from "../auth-icons/EyeIcons";
 
 function AddPasswordModal({ onSuccess, onOpen, onClose }) {
@@ -24,8 +25,14 @@ function AddPasswordModal({ onSuccess, onOpen, onClose }) {
   const handleSubmit = async () => {
     setError("");
 
-    if (password.length < 6) {
-      setError("Lozinka mora sadržati najmanje 6 karaktera.");
+    if (!isValidPassword(password)) {
+      if (password.length < 8) {
+        setError("Lozinka mora sadržati najmanje 8 karaktera.");
+      } else if (!/[a-zA-Z]/.test(password)) {
+        setError("Lozinka mora sadržati bar jedno slovo.");
+      } else if (!/[0-9]/.test(password)) {
+        setError("Lozinka mora sadržati bar jedan broj.");
+      }
       return;
     }
 

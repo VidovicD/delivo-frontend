@@ -1,5 +1,6 @@
 import "./AuthModal.css";
 import closeIcon from "../../assets/close.svg";
+import React, { useEffect } from "react";
 
 import AuthSuccess from "./AuthSuccess";
 import OAuthButtons from "./OAuthButtons";
@@ -29,6 +30,8 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     registerStep,
     registerName,
     registerEmail,
+    registerPhoneCountry,
+    registerPhone,
     registerPassword,
     registerPasswordConfirm,
     registerOtp,
@@ -40,6 +43,34 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
     cooldownMessage,
   } = state;
 
+  // Kada se AuthModal ponovo montuje sa register mode-om, logika u useAuthFlow će se pokrenuti
+  // useEffect za mode će resetovati sve vrednosti
+  
+  // Resetuj sve vrednosti kada se AuthModal montuje (svaki put когда се modal otvori)
+  useEffect(() => {
+    if (mode === "register") {
+      // Očisti localStorage zastarele registracije
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith('pending_registration:')) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+      
+      setters.setRegisterOtp("");
+      setters.setRegisterName("");
+      setters.setRegisterPhoneCountry("RS");
+      setters.setRegisterPhone("");
+      setters.setRegisterPassword("");
+      setters.setRegisterPasswordConfirm("");
+      setters.setFormError("");
+    }
+  }, []);
+  
   return (
     <div
       className="auth-overlay"
@@ -139,6 +170,8 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 registerStep={registerStep}
                 registerName={registerName}
                 registerEmail={registerEmail}
+                registerPhoneCountry={registerPhoneCountry}
+                registerPhone={registerPhone}
                 registerPassword={registerPassword}
                 registerPasswordConfirm={registerPasswordConfirm}
                 registerOtp={registerOtp}
@@ -150,6 +183,8 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
                 setRegisterTouched={setters.setRegisterTouched}
                 setRegisterName={setters.setRegisterName}
                 setRegisterEmail={setters.setRegisterEmail}
+                setRegisterPhoneCountry={setters.setRegisterPhoneCountry}
+                setRegisterPhone={setters.setRegisterPhone}
                 setRegisterPassword={setters.setRegisterPassword}
                 setRegisterPasswordConfirm={setters.setRegisterPasswordConfirm}
                 setRegisterOtp={setters.setRegisterOtp}

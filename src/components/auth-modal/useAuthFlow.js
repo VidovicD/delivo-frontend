@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { isValidEmail, getAuthErrorMessage } from "./authUtils";
+import { isValidEmail, isValidPassword, getAuthErrorMessage } from "./authUtils";
 import { loginWithPassword, googleOAuth, resetPassword } from "./authActions";
 import { supabase } from "../../supabaseClient";
 import { syncGuestAddressesToUser } from "../../utils/deliveryAddress";
+import { getFullPhoneNumber, isValidPhoneNumber } from "../../utils/phoneUtils";
 
 export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const modalRef = useRef(null);
@@ -20,6 +21,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [registerStep, setRegisterStep] = useState("email");
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
+  const [registerPhoneCountry, setRegisterPhoneCountry] = useState("RS");
+  const [registerPhone, setRegisterPhone] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerPasswordConfirm, setRegisterPasswordConfirm] = useState("");
   const [registerOtp, setRegisterOtp] = useState("");
@@ -38,6 +41,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
   const [registerTouched, setRegisterTouched] = useState({
     email: false,
     name: false,
+    phone: false,
     password: false,
     passwordConfirm: false,
     otp: false,
@@ -54,6 +58,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setRegisterStep("email");
     setRegisterName("");
     setRegisterEmail("");
+    setRegisterPhoneCountry("RS");
+    setRegisterPhone("");
     setRegisterPassword("");
     setRegisterPasswordConfirm("");
     setRegisterOtp("");
@@ -78,8 +84,16 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     setSuccessType("auth");
     setFormError("");
     setLoading(false);
-    resetLoginState();
-    resetRegisterState();
+    
+    // Resetuj samo ako se menja mode (sa login na register ili obrnuto)
+    if (mode !== nextMode) {
+      if (nextMode === "login") {
+        resetLoginState();
+      } else if (nextMode === "register") {
+        resetRegisterState();
+      }
+    }
+    
     onSwitch(nextMode);
   };
 
@@ -155,6 +169,17 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
     return () => { mounted = false; };
   }, [registerEmail, registerStep]);
 
+  // Resetuj OTP i cooldown kada se korisnik vrati na email korak
+  useEffect(() => {
+    if (registerStep === "email") {
+      setRegisterOtp("");
+      setOtpLockoutUntil(null);
+      setResendCooldownUntil(null);
+      setCooldownMessage("");
+      setFormError("");
+    }
+  }, [registerStep]);
+
   useEffect(() => {
     if (!otpLockoutUntil) {
       setFormError((prev) => {
@@ -170,12 +195,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       const remaining = otpLockoutUntil - Date.now();
       if (remaining <= 0) {
         setOtpLockoutUntil(null);
-        setFormError((prev) => {
-          if (prev && prev.includes("Previše pokušaja")) {
-            return "";
-          }
-          return prev;
-        });
+        setRegisterOtp("");
+        setFormError("Kod je istekao. Zatražite novi kod.");
         return;
       }
 
@@ -226,6 +247,15 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
     return () => clearInterval(interval);
   }, [resendCooldownUntil, cooldownMessage]);
+
+  // Resetuj sve kada korisnik bira "register" mode (npr. nakon što zatvori modal i ponovo otvori)
+  useEffect(() => {
+    if (mode === "register") {
+      resetRegisterState();
+    } else if (mode === "login") {
+      resetLoginState();
+    }
+  }, [mode]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -370,6 +400,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
   const handleVerifyOtp = async () => {
     if (loading) return;
+    
     setRegisterTouched((t) => ({ ...t, otp: true }));
 
     if (!registerOtp) {
@@ -414,6 +445,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
       setRegisterVerifyToken(data.verifyToken || "");
       setOtpLockoutUntil(null);
+      setRegisterOtp("");
       setCooldownMessage("");
       setRegisterStep("details");
       setRegisterTouched({
@@ -798,6 +830,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
 
       if (
         !registerName ||
+        !registerPhone ||
         !registerPassword ||
         !registerPasswordConfirm
       ) {
@@ -805,8 +838,19 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
         return;
       }
 
-      if (registerPassword.length < 6) {
-        setFormError("Lozinka mora imati najmanje 6 karaktera.");
+      if (!isValidPhoneNumber(registerPhone, registerPhoneCountry)) {
+        setFormError("Broj telefona nije validan.");
+        return;
+      }
+
+      if (!isValidPassword(registerPassword)) {
+        if (registerPassword.length < 8) {
+          setFormError("Lozinka mora imati najmanje 8 karaktera.");
+        } else if (!/[a-zA-Z]/.test(registerPassword)) {
+          setFormError("Lozinka mora sadržati bar jedno slovo.");
+        } else if (!/[0-9]/.test(registerPassword)) {
+          setFormError("Lozinka mora sadržati bar jedan broj.");
+        }
         return;
       }
 
@@ -826,6 +870,7 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
             email: registerEmail,
             verifyToken: registerVerifyToken,
             name: registerName,
+            phone: getFullPhoneNumber(registerPhone, registerPhoneCountry),
             password: registerPassword,
           },
         });
@@ -940,6 +985,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       registerStep,
       registerName,
       registerEmail,
+      registerPhoneCountry,
+      registerPhone,
       registerPassword,
       registerPasswordConfirm,
       registerOtp,
@@ -958,6 +1005,8 @@ export default function useAuthFlow({ mode, onSwitch, onSuccess, onClose }) {
       setLoginTouched,
       setRegisterName,
       setRegisterEmail,
+      setRegisterPhoneCountry,
+      setRegisterPhone,
       setRegisterPassword,
       setRegisterPasswordConfirm,
       setRegisterOtp,
