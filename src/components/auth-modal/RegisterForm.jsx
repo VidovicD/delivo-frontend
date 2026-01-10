@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { isValidPassword } from "./authUtils";
 import { COUNTRIES } from "../../utils/countries";
-import { formatPhoneNumber, isValidPhoneNumber, getFullPhoneNumber } from "../../utils/phoneUtils";
+import { formatPhoneNumber, isValidPhoneNumber } from "../../utils/phoneUtils";
 
 function RegisterForm({
   registerStep,

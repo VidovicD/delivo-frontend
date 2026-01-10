@@ -69,7 +69,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
       setters.setRegisterPasswordConfirm("");
       setters.setFormError("");
     }
-  }, []);
+  }, [mode, setters]);
   
   return (
     <div
