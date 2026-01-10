@@ -380,10 +380,12 @@ function RegisterForm({
                     autoComplete="off"
                     value={registerOtp[index] || ""}
                     onChange={(e) => {
+                      const input = e.target.value.replace(/\D/g, "");
+                      if (input.length > 1) return; // Spreči višestruko kucanje
                       const newOtp = registerOtp.split("");
-                      newOtp[index] = e.target.value.replace(/\D/g, "");
+                      newOtp[index] = input;
                       setRegisterOtp(newOtp.join(""));
-                      if (newOtp[index] && index < 5) document.getElementById(`otp-${index+1}`).focus();
+                      if (input && index < 5) document.getElementById(`otp-${index+1}`).focus();
                       if (formError && !otpLocked) setFormError("");
                       // Resetuj touched da se client validacija obriše
                       if (registerTouched.otp) setRegisterTouched((t) => ({ ...t, otp: false }));
