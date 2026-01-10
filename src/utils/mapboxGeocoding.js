@@ -2,6 +2,7 @@ import {
   getNoviSadLocationBias,
   getNoviSadLocationRestriction,
   toLatin,
+  isPointInDeliveryZone,
 } from "./addressValidation";
 
 function buildMapboxUrl(query) {
@@ -53,6 +54,12 @@ export async function fetchMapboxSuggestions(query) {
       }
       if (!center || center.length < 2) return null;
       const point = { lng: center[0], lat: center[1] };
+      
+      // Filtriraj samo adrese koje su u zoni dostave
+      if (!isPointInDeliveryZone(point)) {
+        return null;
+      }
+      
       return {
         id: feature.id,
         display_name: feature.address
