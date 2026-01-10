@@ -46,7 +46,7 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
   // Kada se AuthModal ponovo montuje sa register mode-om, logika u useAuthFlow će se pokrenuti
   // useEffect za mode će resetovati sve vrednosti
   
-  // Resetuj sve vrednosti kada se AuthModal montuje (svaki put когда се modal otvori)
+  // Resetuj sve vrednosti kada se AuthModal montuje (svaki put kada se modal otvori)
   useEffect(() => {
     if (mode === "register") {
       // Očisti localStorage zastarele registracije
@@ -69,7 +69,8 @@ function AuthModal({ mode, onClose, onSwitch, onSuccess }) {
       setters.setRegisterPasswordConfirm("");
       setters.setFormError("");
     }
-  }, [mode, setters]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
   
   return (
     <div
