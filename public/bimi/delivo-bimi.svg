@@ -3,7 +3,14 @@
      version="1.2"
      baseProfile="tiny-ps"
      viewBox="0 0 100 100">
-  <rect width="100" height="100" fill="#FFB60F"/>
-  <circle cx="50" cy="38" r="16" fill="#070B0C"/>
-  <path d="M22 82 C22 62 78 62 78 82 Z" fill="#070B0C"/>
+  <title>Delivo</title>
+
+  <!-- Background -->
+  <path d="M0 0 H100 V100 H0 Z" fill="#FFB60F"/>
+
+  <!-- Head -->
+  <circle cx="50" cy="36" r="14" fill="#070B0C"/>
+
+  <!-- Body -->
+  <path d="M24 82 C26 64 74 64 76 82 Z" fill="#070B0C"/>
 </svg>
